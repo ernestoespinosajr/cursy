@@ -1,0 +1,6 @@
+.DS_Store
+*.xcuserstate
+cursy-app/build/
+cursy-app/releases/
+cursy-app/worker/node_modules/
+cursy-app/worker/.dev.vars
