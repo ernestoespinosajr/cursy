@@ -138,7 +138,7 @@ enum DS {
 
         // ── Overlay Cursor ───────────────────────────────────────────
 
-        /// The blue cursor/bubble color used in OverlayWindow.
+        /// Legacy accent for response bubbles; the cursor uses clear glass.
         /// Kept distinct from the accent since it serves a different purpose
         /// (screen overlay vs in-app UI).
         static let overlayCursorBlue = Color(hex: "#3380FF")

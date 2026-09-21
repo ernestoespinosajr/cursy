@@ -2,10 +2,11 @@
   "name": "cursy-proxy",
   "private": true,
   "scripts": {
+    "test": "node --experimental-strip-types --test src/vision.test.ts src/runtime.test.ts",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.135.0"
   }
 }

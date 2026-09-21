@@ -16,37 +16,37 @@
 			containerPortal = 28F22CB72F56440300A0FC59 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 28F22CBE2F56440300A0FC59;
-			remoteInfo = "Cursy";
+			remoteInfo = Cursy;
 		};
 		28F22CD72F56440300A0FC59 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 28F22CB72F56440300A0FC59 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 28F22CBE2F56440300A0FC59;
-			remoteInfo = "Cursy";
+			remoteInfo = Cursy;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		28F22CBF2F56440300A0FC59 /* Cursy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cursy.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		28F22CCC2F56440300A0FC59 /* CursyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CursyTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		28F22CD62F56440300A0FC59 /* CursyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CursyUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		28F22CCC2F56440300A0FC59 /* CursyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CursyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		28F22CD62F56440300A0FC59 /* CursyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CursyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		28F22CC12F56440300A0FC59 /* Cursy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Cursy";
+			path = Cursy;
 			sourceTree = "<group>";
 		};
 		28F22CCF2F56440300A0FC59 /* CursyTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "CursyTests";
+			path = CursyTests;
 			sourceTree = "<group>";
 		};
 		28F22CD92F56440300A0FC59 /* CursyUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "CursyUITests";
+			path = CursyUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -115,11 +115,11 @@
 			fileSystemSynchronizedGroups = (
 				28F22CC12F56440300A0FC59 /* Cursy */,
 			);
-			name = "Cursy";
+			name = Cursy;
 			packageProductDependencies = (
 				AA00BB022F6500020039DA55 /* Sparkle */,
 			);
-			productName = "Cursy";
+			productName = Cursy;
 			productReference = 28F22CBF2F56440300A0FC59 /* Cursy.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -139,10 +139,10 @@
 			fileSystemSynchronizedGroups = (
 				28F22CCF2F56440300A0FC59 /* CursyTests */,
 			);
-			name = "CursyTests";
+			name = CursyTests;
 			packageProductDependencies = (
 			);
-			productName = "CursyTests";
+			productName = CursyTests;
 			productReference = 28F22CCC2F56440300A0FC59 /* CursyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -162,10 +162,10 @@
 			fileSystemSynchronizedGroups = (
 				28F22CD92F56440300A0FC59 /* CursyUITests */,
 			);
-			name = "CursyUITests";
+			name = CursyUITests;
 			packageProductDependencies = (
 			);
-			productName = "CursyUITests";
+			productName = CursyUITests;
 			productReference = 28F22CD62F56440300A0FC59 /* CursyUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -403,18 +403,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Cursy/Cursy.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Cursy/Cursy.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2UDAY4J48G;
+				DEVELOPMENT_TEAM = KJG5B2FR34;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Cursy/Info.plist";
+				INFOPLIST_FILE = Cursy/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cursy;
 				INFOPLIST_KEY_CFBundleName = Cursy;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -424,7 +424,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hellocursy.Cursy";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hellocursy.Cursy;
 				PRODUCT_NAME = Cursy;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -441,18 +441,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Cursy/Cursy.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Cursy/Cursy.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2UDAY4J48G;
+				DEVELOPMENT_TEAM = KJG5B2FR34;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Cursy/Info.plist";
+				INFOPLIST_FILE = Cursy/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cursy;
 				INFOPLIST_KEY_CFBundleName = Cursy;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -462,7 +462,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hellocursy.Cursy";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hellocursy.Cursy;
 				PRODUCT_NAME = Cursy;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -484,7 +484,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hellocursy.CursyTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hellocursy.CursyTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -505,7 +505,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hellocursy.CursyTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hellocursy.CursyTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -524,14 +524,14 @@
 				DEVELOPMENT_TEAM = 6D7X9GGZAW;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hellocursy.CursyUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hellocursy.CursyUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "Cursy";
+				TEST_TARGET_NAME = Cursy;
 			};
 			name = Debug;
 		};
@@ -543,14 +543,14 @@
 				DEVELOPMENT_TEAM = 6D7X9GGZAW;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hellocursy.CursyUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hellocursy.CursyUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "Cursy";
+				TEST_TARGET_NAME = Cursy;
 			};
 			name = Release;
 		};

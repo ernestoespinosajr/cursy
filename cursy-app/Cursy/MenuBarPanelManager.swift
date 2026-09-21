@@ -24,6 +24,13 @@ private class KeyablePanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
 
+/// Keeps the transparent corners of the rounded SwiftUI panel transparent in
+/// the AppKit backing store. A regular hosting view can otherwise contribute a
+/// rectangular background/shadow around the clipped SwiftUI material.
+private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
+}
+
 @MainActor
 final class MenuBarPanelManager: NSObject {
     private var statusItem: NSStatusItem?
@@ -32,13 +39,17 @@ final class MenuBarPanelManager: NSObject {
     private var dismissPanelObserver: NSObjectProtocol?
 
     private let companionManager: CompanionManager
-    private let panelWidth: CGFloat = 320
+    private lazy var homePanelController = HomePanelController(companionManager: companionManager,
+        onSettings: { [weak self] in self?.showPanel() })
+    private let panelWidth: CGFloat = 336
     private let panelHeight: CGFloat = 380
+    private let panelCornerRadius: CGFloat = 16
 
     init(companionManager: CompanionManager) {
         self.companionManager = companionManager
         super.init()
         createStatusItem()
+        homePanelController.startHoverMonitoring()
 
         dismissPanelObserver = NotificationCenter.default.addObserver(
             forName: .cursyDismissPanel,
@@ -67,44 +78,23 @@ final class MenuBarPanelManager: NSObject {
 
         button.image = makeCursyMenuBarIcon()
         button.image?.isTemplate = true
+        button.imagePosition = .imageOnly
         button.action = #selector(statusItemClicked)
         button.target = self
     }
 
-    /// Draws the cursy triangle as a menu bar icon. Uses the same shape
-    /// and rotation as the in-app cursor so the menu bar icon matches.
-    private func makeCursyMenuBarIcon() -> NSImage {
-        let iconSize: CGFloat = 18
-        let image = NSImage(size: NSSize(width: iconSize, height: iconSize))
-        image.lockFocus()
-
-        let triangleSize = iconSize * 0.7
-        let cx = iconSize * 0.50
-        let cy = iconSize * 0.50
-        let height = triangleSize * sqrt(3.0) / 2.0
-
-        let top = CGPoint(x: cx, y: cy + height / 1.5)
-        let bottomLeft = CGPoint(x: cx - triangleSize / 2, y: cy - height / 3)
-        let bottomRight = CGPoint(x: cx + triangleSize / 2, y: cy - height / 3)
-
-        let angle = 35.0 * .pi / 180.0
-        func rotate(_ point: CGPoint) -> CGPoint {
-            let dx = point.x - cx, dy = point.y - cy
-            let cosA = CGFloat(cos(angle)), sinA = CGFloat(sin(angle))
-            return CGPoint(x: cx + cosA * dx - sinA * dy, y: cy + sinA * dx + cosA * dy)
-        }
-
-        let path = NSBezierPath()
-        path.move(to: rotate(top))
-        path.line(to: rotate(bottomLeft))
-        path.line(to: rotate(bottomRight))
-        path.close()
-
-        NSColor.black.setFill()
-        path.fill()
-
-        image.unlockFocus()
-        return image
+    /// Uses the same SF Symbol family as the in-panel Cursy identity. The
+    /// fallback keeps the status item available on older supported macOS builds.
+    private func makeCursyMenuBarIcon() -> NSImage? {
+        let image = NSImage(
+            systemSymbolName: "cursorarrow.motionlines",
+            accessibilityDescription: "Cursy"
+        ) ?? NSImage(
+            systemSymbolName: "cursorarrow",
+            accessibilityDescription: "Cursy"
+        )
+        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+        return image?.withSymbolConfiguration(configuration)
     }
 
     /// Opens the panel automatically on app launch so the user sees
@@ -144,13 +134,20 @@ final class MenuBarPanelManager: NSObject {
     }
 
     private func createPanel() {
-        let companionPanelView = CompanionPanelView(companionManager: companionManager)
+        let companionPanelView = CompanionPanelView(companionManager: companionManager,
+            onOpenHome: { [weak self] in
+                self?.hidePanel()
+                self?.homePanelController.show()
+            })
             .frame(width: panelWidth)
 
-        let hostingView = NSHostingView(rootView: companionPanelView)
+        let hostingView = TransparentHostingView(rootView: companionPanelView)
         hostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = .clear
+        hostingView.layer?.cornerRadius = panelCornerRadius
+        hostingView.layer?.cornerCurve = .continuous
+        hostingView.layer?.masksToBounds = true
 
         let menuBarPanel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
@@ -163,7 +160,7 @@ final class MenuBarPanelManager: NSObject {
         menuBarPanel.level = .floating
         menuBarPanel.isOpaque = false
         menuBarPanel.backgroundColor = .clear
-        menuBarPanel.hasShadow = false
+        menuBarPanel.hasShadow = true
         menuBarPanel.hidesOnDeactivate = false
         menuBarPanel.isExcludedFromWindowsMenu = true
         menuBarPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -172,6 +169,7 @@ final class MenuBarPanelManager: NSObject {
         menuBarPanel.titlebarAppearsTransparent = true
 
         menuBarPanel.contentView = hostingView
+        menuBarPanel.invalidateShadow()
         panel = menuBarPanel
     }
 
@@ -188,13 +186,25 @@ final class MenuBarPanelManager: NSObject {
         let actualPanelHeight = fittingSize.height
 
         // Horizontally center the panel beneath the status item icon
-        let panelOriginX = statusItemFrame.midX - (panelWidth / 2)
+        let desiredPanelOriginX = statusItemFrame.midX - (panelWidth / 2)
+        let visibleFrame = buttonWindow.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
+        let panelOriginX: CGFloat
+        if let visibleFrame {
+            let horizontalMargin: CGFloat = 8
+            panelOriginX = min(
+                max(desiredPanelOriginX, visibleFrame.minX + horizontalMargin),
+                visibleFrame.maxX - panelWidth - horizontalMargin
+            )
+        } else {
+            panelOriginX = desiredPanelOriginX
+        }
         let panelOriginY = statusItemFrame.minY - actualPanelHeight - gapBelowMenuBar
 
         panel.setFrame(
             NSRect(x: panelOriginX, y: panelOriginY, width: panelWidth, height: actualPanelHeight),
             display: true
         )
+        panel.invalidateShadow()
     }
 
     // MARK: - Click Outside Dismissal

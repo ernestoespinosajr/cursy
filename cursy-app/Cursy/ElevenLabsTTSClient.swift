@@ -30,7 +30,7 @@ final class ElevenLabsTTSClient {
 
     /// Sends `text` to ElevenLabs TTS and plays the resulting audio.
     /// Throws on network or decoding errors. Cancellation-safe.
-    func speakText(_ text: String) async throws {
+    func speakText(_ text: String, shouldPlay: () -> Bool = { true }) async throws {
         var request = URLRequest(url: proxyURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -61,6 +61,7 @@ final class ElevenLabsTTSClient {
         }
 
         try Task.checkCancellation()
+        guard shouldPlay() else { return }
 
         let player = try AVAudioPlayer(data: data)
         self.audioPlayer = player

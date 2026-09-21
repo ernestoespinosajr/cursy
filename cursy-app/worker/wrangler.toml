@@ -1,6 +1,8 @@
 name = "cursy-proxy"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+workers_dev = true
+preview_urls = false
 
 [vars]
 ELEVENLABS_VOICE_ID = "replace-with-your-elevenlabs-voice-id"

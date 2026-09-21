@@ -1,4 +1,51 @@
-# Release Scripts
+# Validation and Release Scripts
+
+## Native visual/session regressions (offline)
+
+Run `bash scripts/test-native-regressions.sh` from `cursy-app`. It compiles native
+sources except the Sparkle app entry, then runs isolated Swift Testing regression
+files. It does not replace the full Xcode/UI suite or live provider QA. Temporary
+build/test logs are printed by path; macros may require execution outside a tool
+sandbox. No app launch, xcodebuild, credentials or external services.
+App and test compilation enable `MemberImportVisibility`, matching the Xcode
+project's import checks. This catches missing explicit framework imports that
+the previous standalone compiler invocation allowed; other Xcode build settings
+and signing/UI validation still require Xcode.
+See [VISUAL_INTENT_QA.md](VISUAL_INTENT_QA.md) for the live tsk004 acceptance gate.
+See [SPATIAL_CONTEXT_QA.md](SPATIAL_CONTEXT_QA.md) for the opt-in spatial-input beta,
+its bounded multiscene Realtime input and remaining provider/manual acceptance gates (tsk006).
+See [SETTINGS_QA.md](SETTINGS_QA.md) for the opt-in Home prototype and its design
+gate before the remaining tsk007 settings/text-input work.
+See [VOICE_LATENCY_QA.md](VOICE_LATENCY_QA.md) for early Realtime capture,
+bounded buffering, numeric phase measurements and the tsk017 physical gate.
+
+Static Home review (from `cursy-app`, using the runner's printed artifact path):
+
+```bash
+home_artifacts=/private/tmp/cursy-native-regression.REPLACE_WITH_ACTUAL
+xcrun swiftc -swift-version 5 -parse-as-library -module-cache-path "$home_artifacts/cache" \
+  -I "$home_artifacts" -L "$home_artifacts" -lCursy \
+  -Xlinker -rpath -Xlinker "$home_artifacts" scripts/RenderHomePrototype.swift \
+  -o "$home_artifacts/render-home"
+"$home_artifacts/render-home" "$home_artifacts"
+```
+
+Renders light/dark PNGs of the production view using synthetic messages and an
+unordered AppKit window (never foregrounded), no desktop screenshot or model call.
+Does not validate physical window focus, keyboard traversal, capture or audio.
+
+For synthetic message-preparation timing, run
+`bash scripts/benchmark-spatial-preparation.sh <absolute-native-artifact-directory>`.
+The directory comes from the regression runner above. Thirty samples each for
+one/three scenes measure local raster/JSON preparation only, not capture, UI,
+model quality, network latency or cost. No API calls or private inputs.
+
+## Session core (offline)
+
+Run `bash scripts/test-session-core.sh` from `cursy-app` to compile and execute
+the in-memory session/replay tests without launching Cursy or using xcodebuild.
+See [SESSION_QA.md](SESSION_QA.md) for the separate manual acceptance checklist.
+No microphone, screenshots, credentials or provider calls are used by this command.
 
 ## `release.sh` — Ship a new version of Cursy
 

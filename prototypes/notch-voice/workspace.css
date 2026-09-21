@@ -1,0 +1,52 @@
+/* One material and one gradient, shared by navigation and content. */
+:root{--cursor-tint:#38d6a1;--panel-height:min(590px,calc(100dvh - 330px))}
+body{overflow:hidden;height:100dvh}
+.sf{width:22px;height:22px;display:inline-block;vertical-align:middle;flex:none;background:currentColor;mask:var(--symbol) center/contain no-repeat;-webkit-mask:var(--symbol) center/contain no-repeat}
+.icon-button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;background:transparent;color:#d8dadb;border-radius:9px;padding:4px}
+.icon-button:active{background:#ffffff18;opacity:1}
+.conversation{width:min(840px,calc(100vw - 28px));height:var(--panel-height);padding-top:44px}
+.conversation .shell{display:none}
+.conversation:before{content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);width:232px;height:65px;background:#000;z-index:-1}
+.conversation:after{content:'';position:absolute;left:0;right:0;top:44px;bottom:0;z-index:-1;border-radius:22px;background:linear-gradient(#000 0px,#000 100px,#000b 260px,#0003 100%);backdrop-filter:blur(24px);box-shadow:0 16px 35px #0002}
+.conversation .glass{height:100%;min-height:0;display:flex;flex-direction:column;border-radius:22px;backdrop-filter:blur(18px);overflow:visible}
+.conversation .head{height:78px;flex:none;padding:18px 22px;gap:10px;position:relative}
+/* Concave shoulders join an opaque neck to the same opaque header. */
+.conversation .head:before,.conversation .head:after{content:'';position:absolute;top:-16px;width:16px;height:16px;background:radial-gradient(circle at 0 0,transparent 16px,#000 16.5px);pointer-events:none}
+.conversation .head:before{right:calc(50% + 116px)}
+.conversation .head:after{left:calc(50% + 116px);transform:scaleX(-1)}
+.identity{font-size:16px}.identity small{margin-left:8px;font-size:11px;font-weight:500;color:#aaa}.status{font-size:11px}.head>.sf{width:28px;height:28px}.meta{gap:7px}.meta .sf{width:20px;height:20px}.meta .shortcut{display:flex;gap:0}.meta .shortcut .sf{width:16px;height:16px}
+.workspace{display:grid;grid-template-columns:188px minmax(0,1fr);flex:1;min-height:0;overflow:hidden;border-radius:0 0 22px 22px;border-top:1px solid #ffffff12}
+.workspace.hide-sidebar{grid-template-columns:1fr}.workspace.hide-sidebar .sidebar{display:none}
+.sidebar{display:flex;flex-direction:column;min-height:0;padding:20px 12px 18px;border-right:1px solid #ffffff19;background:transparent;color:#ddd;gap:12px}
+.sidebar .side-heading{display:flex;justify-content:space-between;align-items:center;padding:0 8px;font-size:13px;color:#fff;font-weight:600}
+.sidebar button{border:0;background:transparent;color:inherit;text-align:left;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:9px;font-size:12px}
+.sidebar button[aria-current=true]{background:linear-gradient(#ffffff13,#ffffff09);box-shadow:inset 0 0 0 1px #ffffff12;color:#fff}
+.chat-list{overflow:auto;min-height:0;display:grid;gap:5px}.chat-list button{display:block;width:100%}.chat-list small{display:block;font-size:10px;opacity:.62;margin-top:4px}
+.sidebar .side-bottom{margin-top:auto;padding-top:12px}.side-bottom p{font-size:10px;color:#fff9;margin:0 10px 8px}.sidebar .sf{width:20px;height:20px}
+.workspace-content{min-width:0;overflow:auto;background:transparent;padding:26px 28px 30px;scrollbar-width:thin;scrollbar-color:#fff4 transparent}
+.workspace-content h2{font-size:23px;margin:0 0 8px;letter-spacing:-.5px}.workspace-content p{font-size:13px;line-height:1.6;color:#e2e4e3;margin:0 0 22px}
+.workspace-content .messages{padding:0}.workspace-content .message{background:#0007}.workspace-content .message.user{background:#043127a6}
+.settings-list{margin-top:25px;display:grid;gap:0}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 0;border-bottom:1px solid #ffffff12;font-size:13px}.setting-row:first-child{padding-top:0}.setting-row label{display:flex;align-items:center;gap:9px}
+.setting-row select{max-width:55%;font:inherit;color:white;background:#ffffff0e;border:1px solid #ffffff21;border-radius:9px;padding:8px;color-scheme:dark}
+.setting-row input[type=checkbox]{accent-color:var(--cursor-tint);width:17px;height:17px}.workspace-content .explanation{color:#ffffffb8;font-size:11px;margin-top:22px}
+.colors{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:28px 0}.color{position:relative;display:flex;flex-direction:column;align-items:center;gap:15px;padding:24px 5px 15px;border-radius:18px;border:1px solid #ffffff22;background:linear-gradient(#ffffff0b,#ffffff03);color:#eee;font-size:11px}.color[aria-pressed=true]{border-color:var(--tint);box-shadow:inset 0 0 0 1px var(--tint)}.color .cursor-swatch{width:33px;height:33px;color:var(--tint);filter:drop-shadow(0 0 9px var(--tint))}.color .selected-mark{position:absolute;right:7px;top:7px;width:14px;height:14px;color:var(--tint)}
+.hint-slot{position:absolute;top:52px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px);overflow:hidden;padding:0 2px 2px;pointer-events:none}
+/* Symmetric notification motion; presentation never delays listening or cancellation. */
+.spatial-hint{position:relative;white-space:nowrap;display:flex;align-items:center;gap:7px;margin-top:10px;padding:7px 12px;background:#080a0cde;color:#eee;font-size:11px;border-radius:12px;border:1px solid #ffffff18;pointer-events:none;opacity:0;transform:translateY(calc(-100% - 10px));transition:transform 400ms ease,opacity 400ms ease}
+.spatial-hint.visible{opacity:1;transform:translateY(0)}.spatial-hint .sf{width:16px;height:16px}
+.hint-slot.expanded{top:31px}.hint-slot.expanded .spatial-hint{margin-top:7px}
+.assembly[data-activity="connecting"] .wave,.assembly[data-activity="connecting"] .glow{visibility:hidden}
+.conversation .workspace{opacity:0;transition:opacity 150ms var(--ease-out)}.conversation.is-open .workspace{opacity:1}
+.companion{color:var(--cursor-tint);filter:drop-shadow(0 0 7px var(--cursor-tint))}.companion>.sf{width:26px;height:32px;transition:transform 140ms var(--ease-out)}.companion .cursor-caption{background:#18382f}.companion.docking .cursor-caption{opacity:0}
+.lab{position:fixed;top:calc(var(--panel-height) + 18px);bottom:64px;left:50%;transform:translateX(-50%);margin:0;overflow:auto}.rows span:before{content:'';display:inline-block;width:7px;height:7px;border:1px solid #759e90;border-radius:50%;margin-right:12px}.menubar b:first-child{display:none}.dots{font-size:0}.dots:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#abb2ae;box-shadow:13px 0 #abb2ae,26px 0 #abb2ae}
+.setting-row select{appearance:none;background-image:url('symbols/chevron.down.png');background-size:16px;background-position:right 7px center;background-repeat:no-repeat;padding-right:29px}
+.setting-row input[type=checkbox]{appearance:none;border:1px solid #ffffff55;border-radius:4px;background:#ffffff09}.setting-row input[type=checkbox]:checked{background:var(--cursor-tint) url('symbols/checkmark.png') center/14px no-repeat}
+/* The synthetic document is inside the panel footprint. Its softened preview
+   compensates for embedded-browser backdrop compositing, not native optics. */
+body:has(.conversation.is-open) .context{filter:blur(9px)}
+@media(hover:hover) and (pointer:fine){.sidebar button:hover,.icon-button:hover{background:#ffffff0d}.color:hover{background:#ffffff12}}
+@media(max-width:650px){.workspace{grid-template-columns:145px minmax(0,1fr)}.workspace-content{padding:20px 16px}.head{gap:5px!important;padding:14px!important}.identity small,.meta .shortcut{display:none}.colors{grid-template-columns:repeat(3,minmax(0,1fr))}.sidebar{padding-inline:8px}.setting-row{align-items:flex-start;gap:10px;flex-direction:column}.setting-row select{max-width:100%}.spatial-hint{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.companion>.sf,.conversation .workspace{transition:none}.spatial-hint,.spatial-hint.visible{transform:none;transition:opacity 150ms var(--ease-out)}}
+.reduced .spatial-hint,.reduced .spatial-hint.visible{transform:none;transition:opacity 150ms var(--ease-out)}
+.reduced .companion>.sf{transition:none}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.conversation:after{background:#000;backdrop-filter:none}.conversation .glass{backdrop-filter:none}.sidebar button[aria-current=true]{background:#292929}.spatial-hint{background:#000}}

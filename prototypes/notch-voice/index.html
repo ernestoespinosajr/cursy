@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cursy · Exploración del notch</title>
+<style>
+:root{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d2628;--ease-out:cubic-bezier(0.23,1,0.32,1)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 88% 95%,#9eb5d2,transparent 58%),linear-gradient(125deg,#cfb496,#efe9e0 55%,#abb9bc)}
+button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #2c8f78;outline-offset:3px}button:active{opacity:.75}
+.menubar{height:30px;display:flex;justify-content:space-between;padding:4px 22px;font-size:12px;background:#ffffff32}.menubar span{word-spacing:16px}.menubar b{margin-right:18px}
+.context{position:absolute;top:155px;left:max(32px,calc(50% - 350px));width:min(700px,calc(100% - 64px));height:390px;background:#fffc;border:1px solid #fff8;border-radius:15px;box-shadow:0 20px 65px #25313c18;overflow:hidden}.toolbar{padding:13px 19px;background:#eeefed;color:#838885;font-size:11px;border-bottom:1px solid #00000008}.dots{letter-spacing:4px;color:#abb2ae;margin-right:30px}.note{padding:30px 46px}.note small{text-transform:uppercase;letter-spacing:2px;color:#719086;font-size:10px}.note h1{font-size:25px;letter-spacing:-.7px;font-weight:600;margin:12px 0}.note p{color:#66706c;max-width:470px;font-size:14px}.rows{margin-top:22px;display:grid;gap:13px;color:#606e68;font-size:13px}.rows span:before{content:'○';color:#759e90;margin-right:12px}
+#stage{position:absolute;inset:0 0 auto;z-index:5;pointer-events:none}.assembly{position:relative;margin:auto;width:620px;max-width:100vw;height:31px;pointer-events:auto}.camera{position:absolute;left:50%;top:0;transform:translateX(-50%);width:192px;height:31px;background:#000;border-radius:0 0 10px 10px;z-index:4;cursor:pointer}.camera:focus-visible{outline:2px solid #a3cfbb;outline-offset:2px}.camera button{position:absolute;width:100%;height:100%;border:0;background:transparent;border-radius:inherit;color:transparent}
+.voice{position:absolute;top:29px;left:50%;transform:translateX(-50%);border:0;color:#fff;background:#000;display:flex;align-items:center;justify-content:center;gap:15px;padding:0 15px;isolation:isolate;border-radius:0 0 15px 15px;box-shadow:0 4px 5px #0000000a;overflow:hidden;opacity:1}.voice[hidden]{display:none}.voice .label{font-size:11px;font-weight:500;white-space:nowrap}.voice .glow{position:absolute;bottom:-13px;left:15%;width:70%;height:21px;background:linear-gradient(90deg,#73d6ae,#719cdd,#9a80d2);filter:blur(10px);opacity:.3;z-index:-1;pointer-events:none}.wave{display:flex;align-items:center;justify-content:center;gap:3px;width:46px;height:18px}.wave i{width:3px;height:16px;border-radius:3px;background:#b8e9d3;transform:scaleY(.55);display:block}.minimal .voice{width:192px;height:29px}.labeled .voice{width:236px;height:37px;border-radius:12px 12px 16px 16px}.labeled .voice:before{content:'';position:absolute;top:0;left:22px;width:192px;height:8px;background:#000;z-index:-1}.lateral .voice{top:0;width:336px;height:31px;border-radius:0 0 13px 13px;justify-content:space-between;padding:0 15px}.lateral .voice .wave{width:42px;gap:2px}.lateral .voice .label{font-size:10px}.lateral .voice .glow{display:none}
+.conversation{position:absolute;left:50%;top:29px;transform:translateX(-50%);width:min(580px,calc(100vw - 24px));padding-top:10px;color:white;pointer-events:auto}.conversation[hidden]{display:none}.bridge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:192px;height:15px;background:#000}.bridge:before,.bridge:after{content:'';position:absolute;top:0;width:12px;height:12px;background:radial-gradient(circle at 0 0,transparent 12px,#000 12.5px)}.bridge:before{right:100%}.bridge:after{left:100%;transform:scaleX(-1)}.glass{border-radius:20px;overflow:hidden;background:linear-gradient(#000 0px,#000 78px,#000d 160px,#0005 330px,#0002);backdrop-filter:blur(24px);box-shadow:0 16px 30px #00000015;min-height:338px}.head{display:flex;align-items:center;gap:10px;padding:19px 22px 14px;background:#000}.identity{font-size:15px;font-weight:600}.status{font-size:10px;color:#b7bdbc}.meta{margin-left:auto;display:flex;align-items:center;gap:14px;color:#aec8bc;font-size:11px}.head button{border:0;color:#b5baba;background:transparent;font-size:19px;padding:2px 6px}.messages{padding:12px 22px 26px;display:grid;gap:14px}.message{padding:15px;border-radius:13px;background:#080d10b3;font-size:13px;line-height:1.6}.message.user{background:#073026a6}.message small{display:block;margin-bottom:4px;color:#b5c5be;font-size:10px}.message p{margin:0}
+.lab{position:relative;margin:560px auto 95px;width:min(780px,calc(100% - 40px));padding:21px 25px;border:1px solid #ffffffa0;border-radius:20px;background:#f9faf8e8;box-shadow:0 10px 35px #1b302a09}.labtop{display:flex;align-items:baseline;gap:12px}.labtop h2{font-size:17px;margin:0;letter-spacing:-.3px}.tag{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#617970}.lab p{margin:7px 0 17px;color:#61706b;font-size:12px}.controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.controls button{border:1px solid #d4ded8;border-radius:9px;padding:7px 12px;background:#fff;color:#485e55;font-size:12px}.controls button[aria-pressed=true]{background:#203b30;color:#fff;border-color:#203b30}.meter{display:flex;align-items:center;gap:12px;margin-top:17px;font-size:11px;color:#586d64}.meter input{width:145px;accent-color:#357f65}.caption{font-size:11px;margin-top:14px;color:#72827a}.measure{margin-left:auto;color:#466255;font-variant-numeric:tabular-nums}body.dark{background:radial-gradient(ellipse at 90% 100%,#4e687f,transparent 55%),linear-gradient(125deg,#292e31,#334338 55%,#161b22)}body.dark .menubar{color:#eee;background:#0002}
+/* Revision 2: a single black silhouette surrounds the camera, not a chip below it. */
+.voice{top:0;padding:0 14px;width:388px;height:44px;display:grid;grid-template-columns:1fr 208px 1fr;gap:0;background:transparent;border-radius:0;box-shadow:none;overflow:visible}
+.voice:active{opacity:1}.voice:active .side{opacity:.7}
+.voice .island-skin{position:absolute;inset:0;width:100%;height:100%;z-index:-1;fill:#000;pointer-events:none}
+.voice .side{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0}
+.voice .side.right{grid-column:3}.voice .label{font-size:11px}.voice .wave{width:34px}
+.voice .side strong{font-size:12px;font-weight:600}.voice .side small{display:block;font-size:10px;color:#bfcac4;line-height:1.3}
+.wide .voice{width:444px;height:52px}.voice .chevron{font-size:14px;color:#bfcac4;margin-left:5px}
+.conversation{top:0;padding-top:52px;height:390px;isolation:isolate}
+.conversation .shell{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.conversation .shell-path{fill:url(#body-tint)}
+.conversation .glass{background:transparent;backdrop-filter:blur(24px);box-shadow:none;border-radius:20px 20px 24px 24px;min-height:338px}
+.conversation .head{background:transparent}.conversation .bridge{display:none}
+/* Reveal the surface, never scale its text. The camera stays opaque throughout. */
+body{display:flow-root}#stage{position:fixed}.menubar{position:fixed;top:0;left:0;right:0;z-index:2}
+@media(max-height:950px){.context{top:110px;height:340px}.note{padding-top:22px}.lab{margin-top:470px;margin-bottom:64px}}
+.voice{clip-path:inset(0 calc(50% - 96px) calc(100% - 31px) round 0 0 10px 10px);transition:clip-path 250ms var(--ease-out);pointer-events:none}
+.voice.is-open{clip-path:inset(0 0 0 round 0);pointer-events:auto}
+.voice .side{opacity:0;transition:opacity 150ms var(--ease-out)}
+.voice.is-open .side{opacity:1}
+.conversation{clip-path:inset(0 calc(50% - 96px) calc(100% - 31px) round 0 0 10px 10px);transition:clip-path 250ms var(--ease-out);pointer-events:none}
+.conversation.is-open{clip-path:inset(0 0 0 round 0);pointer-events:auto}
+.conversation .head,.conversation .messages{opacity:0;transition:opacity 150ms var(--ease-out)}
+.conversation.is-open .head,.conversation.is-open .messages{opacity:1}
+.companion{position:fixed;top:0;left:0;width:26px;height:32px;pointer-events:none;z-index:7;transition:transform 250ms var(--ease-out),opacity 150ms var(--ease-out);filter:drop-shadow(0 2px 3px #0004)}
+.companion svg{width:26px;height:32px;fill:#203d33;stroke:#c1f3dc;stroke-width:1.4;stroke-linejoin:round}
+.companion span{position:absolute;top:29px;left:10px;padding:2px 7px;border-radius:6px;background:#203d33;color:#e6fff0;font-size:10px;white-space:nowrap;transition:opacity 150ms var(--ease-out)}
+.companion.docking span{opacity:0}
+.rows span{border-radius:5px;transition:background-color 150ms ease}
+.rows span.pointed{background:#91d9b44d;outline:1px solid #559c7a}
+.sequence{margin-top:16px;padding-top:14px;border-top:1px solid #d4ded8}
+.sequence-status{font-size:12px;color:#39584b;min-height:36px;margin:9px 0 0}
+.reduced .voice,.reduced .conversation{transition:none}
+.reduced .companion{transition:opacity 150ms var(--ease-out)}
+@media(prefers-reduced-motion:reduce){.voice,.conversation{transition:none}.companion{transition:opacity 150ms var(--ease-out)}}
+@media(max-width:700px){.menubar span{display:none}.context{top:150px}.note{padding:30px}.lab{margin-top:555px}.labtop{flex-wrap:wrap}.measure{margin-left:0}.meta .shortcut{display:none}}
+@media(max-width:460px){.voice,.wide .voice{width:calc(100vw - 8px);grid-template-columns:1fr 192px 1fr;padding:0 8px}.wide .side strong{display:none}.voice .label,.voice .side small{font-size:10px}.voice .chevron{display:none}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.glass{background:#000;backdrop-filter:none}.lab,.context{background:#fff}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.conversation .shell-path{fill:#000}.conversation .glass{backdrop-filter:none}}
+@media(hover:hover) and (pointer:fine){.controls button:hover{border-color:#4e8770}.head button:hover{color:#fff}}
+/* Picker harness: shared specification, independent from Cursy's design. */
+.proto-picker {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.82);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 8px 24px rgba(0, 0, 0, 0.24),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.proto-picker-highlight {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  will-change: transform;
+}
+.proto-picker[data-ready] .proto-picker-highlight {
+  transition:
+    transform 250ms cubic-bezier(0.23, 1, 0.32, 1),
+    width 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .proto-picker[data-ready] .proto-picker-highlight { transition: none; }
+}
+.proto-picker-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+.proto-picker-item:hover { color: rgba(255, 255, 255, 0.85); }
+.proto-picker-item:active { transform: scale(0.97); }
+.proto-picker-item:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
+.proto-picker-item[data-active] { color: #fff; }
+.proto-picker-divider { width: 1px; height: 16px; margin: 0 4px; background: rgba(255, 255, 255, 0.12); }
+.proto-picker-replay { padding: 0 10px; font-size: 14px; }
+.proto-picker[data-position="top"] { bottom: auto; top: 24px; }
+</style>
+<link rel="stylesheet" href="workspace.css">
+<div class="menubar" aria-hidden="true"><div><b>●</b><b>Notas</b><span>Archivo Edición Visualización</span></div><div>Dom 20 sept &nbsp; 10:24</div></div>
+<main>
+<div class="context" aria-hidden="true"><div class="toolbar"><span class="dots">● ● ●</span>Notas / Ideas para esta semana</div><div class="note"><small>Espacio de trabajo · Ejemplo ficticio</small><h1>Una idea, sin perder el hilo.</h1><p>Un asistente debería acompañarte sin tapar aquello en lo que estás trabajando.</p><div class="rows"><span>Revisar la propuesta de diseño</span><span>Señalar lo importante mientras hablo</span><span>Continuar justo donde lo dejé</span></div></div></div>
+<div id="stage"></div>
+<div class="companion" aria-hidden="true"><svg viewBox="0 0 26 32"><path d="M3 2 L22 18 L13 19 L18 28 L13 30 L8 21 L3 27 Z"/></svg><span>Cursy</span></div>
+<section class="lab" aria-label="Controles del prototipo">
+ <div class="labtop"><span class="tag">Cursy / Isla lateral · 02</span><h2 id="name">Compacta</h2><span class="measure" id="size"></span></div>
+ <p id="description"></p>
+ <div class="controls"><button data-mode="idle">En reposo</button><button data-mode="connecting">Conectando</button><button data-mode="listening">Escuchando</button><button data-mode="processing">Procesando</button><button data-mode="responding">Respuesta</button><button data-mode="conversation">Conversación</button><button id="background" aria-pressed="false">Fondo oscuro</button></div>
+ <label class="meter">Nivel de voz simulado <input id="level" type="range" min="0" max="100" value="65"><output id="levelValue">65%</output></label>
+ <div class="sequence"><div class="controls"><button id="demo">Reproducir secuencia</button><button id="reduced" aria-pressed="false">Movimiento reducido</button></div><p class="sequence-status" id="sequence-status" role="status">Cursy está en su posición de reposo.</p></div>
+ <div class="caption">Cámara simulada de 192 × 31 px. Solo diseño: sin micrófono, modelos ni control del puntero real. Pasa por el notch para desplegar; Esc cancela y recoge.</div>
+</section>
+</main>
+<nav class="proto-picker" aria-label="Prototype variants">
+ <span class="proto-picker-highlight" aria-hidden="true"></span>
+ <button class="proto-picker-item" data-active aria-current="true">Compacta</button>
+ <button class="proto-picker-item">Ampliada</button>
+ <span class="proto-picker-divider" aria-hidden="true"></span>
+ <button class="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)">↻</button>
+</nav>
+<script>
+const definitions = [
+ {className:'compact', name:'Compacta', size:'388 × 44 px · envolvente', description:'Ondas a la izquierda y estado a la derecha. Una sola isla negra rodea la cámara y sobrepasa su base solo 13 px; nada se dibuja en el centro.'},
+ {className:'wide', name:'Ampliada', size:'444 × 52 px · envolvente', description:'Identidad y estado a la izquierda; ondas y acceso a la conversación a la derecha. Más legible, a cambio de reservar más espacio en la barra de menú.'}
+];
+let mode='idle', expanded=false, enterTimer, exitTimer;
+let cursorTimers=[], demoTimers=[], demoRunning=false;
+const companion=document.querySelector('.companion');
+const reduceMedia=matchMedia('(prefers-reduced-motion: reduce)');
+const reduced=()=>reduceMedia.matches||document.body.classList.contains('reduced');
+const later=(fn,ms)=>cursorTimers.push(setTimeout(fn,ms));
+function clearCursorTimers(){cursorTimers.forEach(clearTimeout);cursorTimers=[]}
+function stopDemo(){demoTimers.forEach(clearTimeout);demoTimers=[];demoRunning=false;document.getElementById('demo').textContent='Reproducir secuencia'}
+function cursorPoint(kind){
+ const r=document.querySelector('.rows').getBoundingClientRect();
+ if(kind==='dock')return {x:innerWidth/2-13,y:-34};
+ if(kind==='target')return {x:r.left+15,y:r.top+8};
+ return {x:Math.min(r.right-30,innerWidth-40),y:r.bottom+24};
+}
+function moveCursor(kind){
+ const p=cursorPoint(kind);
+ companion.dataset.position=kind;
+ companion.classList.toggle('docking',kind==='dock');
+ companion.style.transform=`translate(${p.x}px,${p.y}px)`;
+}
+function resetCursor(){
+ clearCursorTimers();companion.style.transition='none';moveCursor('rest');companion.style.opacity='1';
+ void companion.offsetWidth;companion.style.transition='';
+ document.querySelector('.rows span').classList.remove('pointed');
+}
+function updateCursor(){
+ clearCursorTimers();document.querySelector('.rows span').classList.remove('pointed');
+ if(mode==='listening'||mode==='processing'){
+  moveCursor('dock');
+  if(reduced())companion.style.opacity='0';
+  else later(()=>{companion.style.opacity='0'},250);
+ }else if(mode==='responding'){
+  companion.style.opacity='1';moveCursor('target');
+  later(()=>document.querySelector('.rows span').classList.add('pointed'),reduced()?0:250);
+  later(()=>{document.querySelector('.rows span').classList.remove('pointed');moveCursor('rest');document.getElementById('sequence-status').textContent='Cursy terminó de señalar y vuelve a su posición habitual.'},1500);
+ }else{companion.style.opacity='1';moveCursor('rest')}
+}
+const wave=()=>'<span class="wave" aria-hidden="true">'+[.3,.65,1,.8,.4].map(w=>`<i style="transform:scaleY(${.15+.85*w*Number(document.getElementById('level').value)/100})"></i>`).join('')+'</span>';
+function renderVariant(i){
+ clearTimeout(enterTimer);clearTimeout(exitTimer);expanded=false;
+ const d=definitions[i];
+ document.getElementById('name').textContent=d.name;
+ document.getElementById('size').textContent=d.size;
+ document.getElementById('description').textContent=d.description;
+ const speaking=mode==='responding', idle=mode==='idle';
+ const title=speaking?'Respondiendo':mode==='connecting'?'Conectando…':mode==='processing'?'Pensando':'Te escucho';
+ const skin='<svg class="island-skin" viewBox="0 0 388 44" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H388 Q376 0 376 12 V26 Q376 44 358 44 H30 Q12 44 12 26 V12 Q12 0 0 0 Z"/></svg>';
+ const shell='<svg class="shell" viewBox="0 0 580 390" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="body-tint" x1="0" y1="112" x2="0" y2="390" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000"/><stop offset=".5" stop-color="#000" stop-opacity=".8"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs><path class="shell-path" d="M174 0 H406 V28 Q406 44 422 44 H560 Q580 44 580 64 V366 Q580 390 556 390 H24 Q0 390 0 366 V64 Q0 44 20 44 H158 Q174 44 174 28 Z"/></svg>';
+ return `<div class="assembly ${d.className}">
+ <div class="camera"><button aria-label="Desplegar conversación desde el notch" data-open></button></div>
+ <button class="voice" data-open aria-label="${title}. Abrir conversación" inert aria-hidden="true">${skin}<span class="side">${i===0?wave():`<span><strong>Cursy</strong><small>${speaking?'Responde':title}</small></span>`}</span><span class="side right">${i===0?`<span class="label">${speaking?'Responde':title}</span>`:wave()+'<span class="chevron" aria-hidden="true">⌄</span>'}</span></button>
+ <section class="conversation" aria-label="Conversación de ejemplo" inert aria-hidden="true">${shell}<div class="glass">
+ <header class="head"><span aria-hidden="true">➤</span><div><div class="identity">Cursy</div><div class="status">${idle?'Listo para ayudarte':title} · Sesión temporal</div></div><div class="meta"><span class="shortcut">⌃ ⌥</span><span title="Pantalla habilitada (simulación)">▣</span><button aria-label="Recoger conversación" data-close>⌃</button></div></header>
+ <div class="messages"><div class="message user"><small>Tú</small><p>¿Cómo puedo hacer esta propuesta más clara?</p></div><div class="message"><small>Cursy</small><p>Empieza por el objetivo, agrupa los cambios y deja una sola decisión al final. Así es más fácil revisar lo importante.</p></div></div></div></section></div>`;
+}
+const variants=definitions.map((_,i)=>()=>renderVariant(i));
+// Shared picker wiring, verbatim.
+const stage = document.getElementById('stage');
+const picker = document.querySelector('.proto-picker');
+const highlight = picker.querySelector('.proto-picker-highlight');
+const items = [...picker.querySelectorAll('.proto-picker-item:not(.proto-picker-replay)')];
+const replay = picker.querySelector('.proto-picker-replay');
+let current = 0;
+function moveHighlight() {
+  const el = items[current];
+  highlight.style.width = el.offsetWidth + 'px';
+  highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+}
+function mount(i) {
+  stopDemo();clearCursorTimers();mode='idle';syncControls();resetCursor();
+  document.getElementById('sequence-status').textContent='Cursy está en su posición de reposo.';
+  stage.innerHTML = '';
+  requestAnimationFrame(() => { stage.innerHTML = variants[i](); });
+}
+function setActive(i) {
+  if (i < 0 || i >= variants.length) return;
+  current = i;
+  items.forEach((el, j) => {
+    el.toggleAttribute('data-active', j === i);
+    if (j === i) el.setAttribute('aria-current', 'true');
+    else el.removeAttribute('aria-current');
+  });
+  moveHighlight();
+  const url = new URL(location);
+  url.searchParams.set('v', i + 1);
+  history.replaceState(null, '', url);
+  mount(i);
+}
+items.forEach((el, i) => el.addEventListener('click', () => setActive(i)));
+replay?.addEventListener('click', () => startDemo());
+window.addEventListener('resize', moveHighlight);
+document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const num = parseInt(e.key, 10);
+  if (num >= 1 && num <= variants.length) setActive(num - 1);
+  else if (e.key === 'ArrowRight') setActive((current + 1) % variants.length);
+  else if (e.key === 'ArrowLeft') setActive((current - 1 + variants.length) % variants.length);
+  else if (e.key === 'r' || e.key === 'R') startDemo();
+});
+const requestedVariant=(parseInt(new URLSearchParams(location.search).get('v'),10)||1)-1;
+setActive(requestedVariant>=0&&requestedVariant<variants.length?requestedVariant:0);
+requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute('data-ready', '')));
+function showConversation(show){
+ clearTimeout(enterTimer);clearTimeout(exitTimer);expanded=show;
+ setSurface(stage.querySelector('.conversation'),show);
+ setSurface(stage.querySelector('.voice'),!show&&['connecting','listening','processing','responding'].includes(mode));
+}
+function setSurface(el,show){
+ if(!el)return;
+ if(!show&&el.contains(document.activeElement))stage.querySelector('.camera button').focus({preventScroll:true});
+ el.classList.toggle('is-open',show);el.inert=!show;el.setAttribute('aria-hidden',String(!show));
+}
+function setMode(next){
+ clearTimeout(enterTimer);clearTimeout(exitTimer);mode=next;syncControls();
+ const title={idle:'Listo para ayudarte',connecting:'Conectando…',listening:'Te escucho',processing:'Pensando',responding:'Responde',conversation:'Conversación'}[mode];
+ const voice=stage.querySelector('.voice');if(!voice)return;
+ voice.setAttribute('aria-label',`${title}. Abrir conversación`);
+ const label=voice.querySelector('.label,.side small');if(label)label.textContent=title;
+ stage.querySelector('.status').textContent=title+' · Sesión temporal';
+ showConversation(mode==='conversation');updateCursor();
+ document.getElementById('sequence-status').textContent={idle:'Cursy está en su posición de reposo.',connecting:'Conexión simulada: todavía no escucha. Sin aviso de señalar ni ondas de entrada.',listening:'Entrada lista (simulación): ahora aparecen las ondas y el aviso para señalar. La animación no activa el micrófono.',processing:'Cursy procesa desde el notch; el cursor sigue oculto.',responding:'Cursy sale del notch para señalar la primera línea y después vuelve a su posición.',conversation:'La conversación se despliega desde el notch sin deformar los textos.'}[mode];
+}
+function startDemo(){
+ stopDemo();setMode('idle');demoRunning=true;document.getElementById('demo').textContent='Detener secuencia';
+ // Demonstration timings, not microphone readiness or measured network latency.
+ [[600,'connecting'],[2000,'listening'],[3800,'processing'],[4700,'responding'],[6500,'idle'],[7100,'conversation'],[8800,'idle']].forEach(([ms,state])=>demoTimers.push(setTimeout(()=>setMode(state),ms)));
+ demoTimers.push(setTimeout(stopDemo,9100));
+}
+stage.addEventListener('click',e=>{
+ if(e.target.closest('[data-open]')){stopDemo();showConversation(true)}
+ if(e.target.closest('[data-close]')){stopDemo();if(mode==='conversation')setMode('idle');else showConversation(false)}
+});
+stage.addEventListener('pointerover',e=>{
+ clearTimeout(exitTimer);
+ if(e.target.closest('.camera')&&matchMedia('(hover:hover) and (pointer:fine)').matches){clearTimeout(enterTimer);enterTimer=setTimeout(()=>showConversation(true),180)}
+});
+stage.addEventListener('pointerout',e=>{
+ if(e.relatedTarget&&stage.contains(e.relatedTarget))return;
+ clearTimeout(enterTimer);clearTimeout(exitTimer);
+ exitTimer=setTimeout(()=>{if(mode!=='conversation')showConversation(false)},800);
+});
+function syncControls(){document.querySelectorAll('[data-mode]').forEach(el=>el.setAttribute('aria-pressed',el.dataset.mode===mode))}
+document.querySelectorAll('[data-mode]').forEach(el=>el.addEventListener('click',()=>{stopDemo();setMode(el.dataset.mode)}));
+document.getElementById('demo').addEventListener('click',()=>{if(demoRunning){stopDemo();setMode('idle')}else startDemo()});
+document.getElementById('reduced').addEventListener('click',e=>{const enabled=document.body.classList.toggle('reduced');e.currentTarget.setAttribute('aria-pressed',enabled);stopDemo();setMode(mode)});
+reduceMedia.addEventListener('change',()=>{stopDemo();setMode(mode)});
+window.addEventListener('resize',()=>{stopDemo();setMode(mode)});
+document.getElementById('background').addEventListener('click',e=>{const dark=document.body.classList.toggle('dark');e.currentTarget.setAttribute('aria-pressed',dark);e.currentTarget.textContent=dark?'Fondo claro':'Fondo oscuro'});
+document.getElementById('level').addEventListener('input',e=>{document.getElementById('levelValue').textContent=e.target.value+'%';const weights=[.3,.65,1,.8,.4];stage.querySelectorAll('.wave i').forEach((bar,i)=>bar.style.transform=`scaleY(${.15+.85*weights[i]*e.target.value/100})`)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){stopDemo();setMode('idle');showConversation(false)}});
+syncControls();
+</script>
+<script src="workspace.js"></script>
+</html>

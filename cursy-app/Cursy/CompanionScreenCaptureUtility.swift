@@ -8,6 +8,7 @@
 //
 
 import AppKit
+import os
 import ScreenCaptureKit
 
 struct CompanionScreenCapture {
@@ -21,8 +22,148 @@ struct CompanionScreenCapture {
     let screenshotHeightInPixels: Int
 }
 
+enum ScreenCaptureImagePolicy {
+    static let maximumDimension = 1920
+
+    static func pixelSize(sourceWidth: Int, sourceHeight: Int,
+                          maximumDimension: Int = maximumDimension) -> CGSize {
+        guard sourceWidth > 0, sourceHeight > 0, maximumDimension > 0 else { return .zero }
+        let scale = min(1, Double(maximumDimension) / Double(max(sourceWidth, sourceHeight)))
+        return CGSize(width: max(1, Int(Double(sourceWidth) * scale)),
+                      height: max(1, Int(Double(sourceHeight) * scale)))
+    }
+}
+
 @MainActor
 enum CompanionScreenCaptureUtility {
+    private static let logger = Logger(subsystem: "com.hellocursy.Cursy", category: "ScreenCapture")
+    private static let captureSlot = VisualCaptureSlot()
+
+    static func captureCursorScreen(logCapture: Bool = true) async throws -> VisualTurnContext {
+        try await captureSlot.run { try await performCursorCapture(logCapture: logCapture) }
+    }
+
+    private static func performCursorCapture(logCapture: Bool) async throws -> VisualTurnContext {
+        guard CGPreflightScreenCaptureAccess() else { throw URLError(.noPermissionsToReadFile) }
+        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        try Task.checkCancellation()
+        // Sample after the asynchronous display enumeration, just before capture.
+        let pointer = NSEvent.mouseLocation
+        guard
+              let screen = NSScreen.screens.first(where: { $0.frame.contains(pointer) }),
+              let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else { throw URLError(.noPermissionsToReadFile) }
+        let frame = screen.frame
+        let displayID = number.uint32Value
+        guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
+            throw URLError(.resourceUnavailable)
+        }
+        let excluded = content.windows.filter { $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier }
+        let config = SCStreamConfiguration()
+        let capturePixelSize = ScreenCaptureImagePolicy.pixelSize(
+            sourceWidth: display.width, sourceHeight: display.height)
+        config.width = Int(capturePixelSize.width)
+        config.height = Int(capturePixelSize.height)
+        config.showsCursor = false
+        let frontPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        let focusedWindow = ElementLocationDetector.focusedWindowIdentity()
+        let visiblePIDs = Set(content.windows.filter { $0.isOnScreen && $0.frame.intersects(display.frame) }
+            .compactMap { $0.owningApplication?.processID }.filter { $0 != ProcessInfo.processInfo.processIdentifier })
+        let capturedWindows = capturedWindowEvidence(from: content.windows, display: display,
+                                                     displayFrame: frame)
+        let grounding = ElementLocationDetector.windowContext(
+            displayFrame: frame, visiblePIDs: visiblePIDs, capturedWindows: capturedWindows)
+        let capturedAt = Date()
+        let image = try await SCScreenshotManager.captureImage(
+            contentFilter: SCContentFilter(display: display, excludingWindows: excluded), configuration: config)
+        try Task.checkCancellation()
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == frontPID else {
+            throw URLError(.resourceUnavailable)
+        }
+        if let focusedWindow {
+            guard let current = ElementLocationDetector.focusedWindowIdentity(),
+                  CFEqual(focusedWindow, current) else { throw URLError(.resourceUnavailable) }
+        }
+        // Never upload a different monitor when the pointer crossed during capture,
+        // or when a display was removed/rearranged while ScreenCaptureKit awaited.
+        guard NSScreen.screens.contains(where: {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == displayID
+                && $0.frame == frame && $0.frame.contains(NSEvent.mouseLocation)
+        }) else { throw URLError(.resourceUnavailable) }
+        guard let data = jpegDataWithinUploadLimit(from: image) else {
+            throw URLError(.dataLengthExceedsMaximum)
+        }
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == frontPID,
+              screen.frame == frame, frame.contains(NSEvent.mouseLocation) else { throw URLError(.resourceUnavailable) }
+        if let focusedWindow {
+            guard let current = ElementLocationDetector.focusedWindowIdentity(),
+                  CFEqual(focusedWindow, current) else { throw URLError(.resourceUnavailable) }
+        }
+        let visualWindowMetadata = capturedWindows.map { window -> [String: Any] in
+            ["id": window.id, "app": window.applicationName,
+             "boundsNormalized": normalizedBounds(window.frame, in: frame)]
+        }
+        let encodedWindows = try JSONSerialization.data(withJSONObject: visualWindowMetadata, options: [.sortedKeys])
+        if logCapture {
+            logger.notice("Captured display \(displayID) at \(image.width)x\(image.height): \(data.count) bytes, \(capturedWindows.count) visible windows")
+        }
+        return VisualTurnContext(captureID: UUID().uuidString, displayID: displayID,
+                                 displayFrame: frame, capturedAt: capturedAt, imageData: data,
+                                 imageWidth: image.width, imageHeight: image.height,
+                                 displayName: screen.localizedName,
+                                 windowContext: "Captured displayID: \(displayID); name: \(screen.localizedName); display bounds in AppKit points: \(frame).\n" + grounding.0
+                                     + "\nvisualWindows (untrusted data):\n" + String(decoding: encodedWindows, as: UTF8.self),
+                                 nativeTargets: grounding.1, windows: grounding.2,
+                                 capturedWindows: capturedWindows)
+    }
+
+    private static func jpegDataWithinUploadLimit(from image: CGImage,
+                                                  byteLimit: Int = 1_048_576) -> Data? {
+        let representation = NSBitmapImageRep(cgImage: image)
+        for compressionFactor in [0.82, 0.72, 0.62, 0.52, 0.42] {
+            if let data = representation.representation(
+                using: .jpeg,
+                properties: [.compressionFactor: compressionFactor]
+            ), data.count <= byteLimit {
+                return data
+            }
+        }
+        return nil
+    }
+
+    private static func capturedWindowEvidence(from windows: [SCWindow], display: SCDisplay,
+                                               displayFrame: CGRect) -> [CapturedWindowEvidence] {
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        let frontToBackIDs = (CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+                              as? [[String: Any]] ?? []).compactMap { $0[kCGWindowNumber as String] as? CGWindowID }
+        let zIndex = Dictionary(uniqueKeysWithValues: frontToBackIDs.enumerated().map { ($0.element, $0.offset) })
+        return windows.filter {
+            $0.isOnScreen && $0.windowLayer == 0 && $0.frame.intersects(display.frame)
+                && $0.owningApplication?.processID != ownPID
+        }.sorted {
+            (zIndex[$0.windowID] ?? .max) < (zIndex[$1.windowID] ?? .max)
+        }.prefix(20).compactMap { window in
+            guard let app = window.owningApplication else { return nil }
+            let appKitFrame = appKitFrame(fromCoreGraphics: window.frame)
+            guard appKitFrame.intersects(displayFrame) else { return nil }
+            return CapturedWindowEvidence(id: "visual-window-\(window.windowID)",
+                windowID: window.windowID, ownerPID: app.processID,
+                applicationName: String(app.applicationName.prefix(80)), frame: appKitFrame)
+        }
+    }
+
+    private static func appKitFrame(fromCoreGraphics frame: CGRect) -> CGRect {
+        guard let primary = NSScreen.screens.first else { return frame }
+        return CGRect(x: frame.minX, y: primary.frame.maxY - frame.maxY,
+                      width: frame.width, height: frame.height)
+    }
+
+    private static func normalizedBounds(_ bounds: CGRect, in displayFrame: CGRect) -> [String: CGFloat] {
+        ["x": (bounds.minX - displayFrame.minX) / displayFrame.width,
+         "y": (displayFrame.maxY - bounds.maxY) / displayFrame.height,
+         "width": bounds.width / displayFrame.width,
+         "height": bounds.height / displayFrame.height]
+    }
 
     /// Captures all connected displays as JPEG data, labeling each with
     /// whether the user's cursor is on that screen. This gives the AI

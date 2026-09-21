@@ -1,6 +1,8 @@
 .DS_Store
 *.xcuserstate
+**/xcuserdata/
 cursy-app/build/
 cursy-app/releases/
 cursy-app/worker/node_modules/
 cursy-app/worker/.dev.vars
+cursy-app/worker/.wrangler/
