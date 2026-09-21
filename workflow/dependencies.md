@@ -115,6 +115,14 @@ the footer with voice shortcut, consent state and session lifetime.
 Native isolated suite now 150 tests/19 suites. Settings,
 text input and physical focus/accessibility/performance gates remain pending.
 
+tsk007 selected-text interoperability (2026-09-21): SelectedTextPanelController
+uses SelectedTextReader (off-main AX IPC) and SelectedTextSearch (shared traversal,
+capability warmup and lifecycle fixtures). Delayed remote AX readiness and
+document/window ownership are separate from menu placement. No app-name branches,
+clipboard, OCR, whole-document context, new permission or provider changes.
+SelectionMenuSearch now shares bounded strip sampling and single-action/container
+detection with fixtures. Offline tests do not substitute physical application QA.
+
 tsk006 compatibility discovery: deployed locator allows exactly one image and a
 16k-character prompt. Initial path integration preserves this boundary and locator
 selection: optional normalized/versioned metadata through existing context, with
@@ -178,10 +186,45 @@ preparation/JSON only; semantic and physical end-to-end gates remain separate.
 - tsk005 annotations reuse tsk004 validated publication and tsk002 observation
   clearing. Structured style is local Realtime-tool metadata; localization and
   Worker contracts stay unchanged. No deployment/new dependencies. Circles and
-  rectangles mark a point, not a semantic element bounding box. Fallback uses
-  the menu preference; explicit voice-style selection is Realtime-only.
+  rectangles mark a point, not a semantic element bounding box. Realtime chooses
+  style; fallback/automatic uses Cursor, without stored user preferences.
 
 ## Durable constraints
+
+- 2026-09-21 native F3: HomeComposer → VisionAPI text stream (no images); selection
+  AX snapshot → fresh ConversationSession.selectedText → text or current Realtime.
+  Selected scope blocks visual capture/gesture paths. Realtime output-only greeting
+  waits for actual playback completion before PTT capture. No Worker/provider change.
+  HomeMicrophone shares route preference across existing recorders and local15s test;
+  QA repair isolates test graph operations, preserves default input without HAL
+  reassignment, and keeps capture ownership through async teardown. Selection IPC
+  is actor-owned; native/web AX ranges and AX notifications share the same reader.
+  Lazy AX trees may opt into documented AXManualAccessibility only when settable;
+  this is capability-based and does not grant OS permissions. Delayed AX events
+  retain only a same-process mouse anchor for1s, invalidated on new input.
+  manager cancels test before voice. Custom shortcuts reuse the listen-only event tap.
+  Native menu avoidance uses exposed nearby AX geometry, not universal visual detection.
+
+- tsk005 adaptive guidance v2 locator/multi-mark contract remains proposed:
+  prototypes/notch-voice/guidance-contract.md. Native single-target motion/tint and
+  verified AX extents are ported; image/canvas extents still need a region-capable
+  locator. Without verified extent circle/rectangle safely use cursor. Multiple marks share a
+  step/revision and invalidate together. tsk009 owns guides; tsk010 owns explicitly
+  authorized bounded observation and evidence-based progression. No always-on
+  capture or per-figure user settings implied by the design. Keep session cancel.
+
+- Native tsk005 presentation does not alter models, Worker schemas or observation
+  budgets. One shared artist traces at1.6× and typed labels have no artist/leader.
+  The short hold/fade retires an indication, never verifies an action or advances
+  a guide. Hide/opt-out/new turn/replacement revoke animation identity. AX static
+  text extent correctness (requested word versus whole paragraph) remains live QA.
+
+- 2026-09-21 tsk005 direction supersedes the manual style preference: the agent
+  chooses guidance style/timing/target, with native validation before publication.
+  Prototype and native Home/legacy selectors are removed; stored defaults are
+  ignored. Realtime is instructed to choose; live quality evaluation remains.
+  Legacy fallback retains Cursor; refresh retains the agent choice. Preview controls
+  are lab-only, never saved app preferences or evidence of actual inference.
 
 - tsk007 limited F2 uses HomeChatLibrary for 20 memory-only chat snapshots backed
   by ConversationSession (text bounds unchanged, no images/audio retained). Restoring
@@ -194,6 +237,16 @@ preparation/JSON only; semantic and physical end-to-end gates remain separate.
   visible panel/display; the existing overlay shows guidance only during real
   listening + recording/limited. Symmetric400 ms hint animation never owns audio
   readiness or delays logical cancellation. Sidebar/settings share HomeGlassSurface.
+
+- 2026-09-21 tsk007 promotion: status item and camera hover now share the same
+  official Home. Legacy CompanionPanelView has no construction path. User follow-up
+  removes the manual objective field and editing infrastructure; intent continues
+  to use the existing request/history, without a new inference call or inferred
+  objective stored as explicit user authorization. Privacy owns existing permission
+  actions; Help owns intro, feedback and quit. Home remains non-key/non-main.
+  Setup guards autohide; PTT must not send the
+  old-menu dismissal (which would suppress the island). Onboarding still dismisses
+  Home. No new provider, defaults migration, consent or persistence; tsk008 remains.
 
 - No terminal xcodebuild, app reinstallation or TCC reset for routine validation.
 - Preserve compact optical scale 0.32, mint default with user-selectable tints,

@@ -8,6 +8,7 @@ struct SpatialTrailView: View {
     let spanish: Bool
     let isListening: Bool
     let hintAnchor: HomeSpatialHintAnchor?
+    @AppStorage("showListeningHint") private var showListeningHint = true
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -28,7 +29,7 @@ struct SpatialTrailView: View {
                 .transaction { $0.animation = nil }
             }
             HomeSpatialHintNotification(text: HomeSpatialHint.text(status: recorder.status,
-                listening: isListening, sceneCount: recorder.retainedSceneCount, spanish: spanish),
+                listening: isListening && showListeningHint, sceneCount: recorder.retainedSceneCount, spanish: spanish),
                 anchor: hintAnchor?.displayFrame == screenFrame ? hintAnchor : nil)
         }
         .frame(width: screenFrame.width, height: screenFrame.height)

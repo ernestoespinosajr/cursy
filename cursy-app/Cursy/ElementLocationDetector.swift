@@ -167,6 +167,55 @@ enum ElementLocationDetector {
         return nil
     }
 
+    /// Optional extent of the exact accessible element at an already validated point.
+    /// Never expand a point into guessed text/image bounds or climb to a container.
+    @MainActor static func annotationRegion(for target: PointingTarget, point: CGPoint,
+                                             context: VisualTurnContext) -> CGRect? {
+        guard AXIsProcessTrusted(),
+              context.validationFailure(for: target, currentFrame: context.displayFrame) == nil,
+              let primary = NSScreen.screens.first else { return nil }
+        let element: AXUIElement
+        if let native = context.nativeTargets.first(where: { $0.id == target.nativeControlID }) {
+            element = native.element
+            guard frame(of: element) == native.frame else { return nil }
+        } else {
+            let system = AXUIElementCreateSystemWide()
+            AXUIElementSetMessagingTimeout(system, 0.02)
+            var hit: AXUIElement?
+            guard AXUIElementCopyElementAtPosition(system, Float(point.x), Float(primary.frame.maxY - point.y), &hit) == .success,
+                  let hit else { return nil }
+            element = hit
+        }
+        AXUIElementSetMessagingTimeout(element, 0.02)
+        let roles = [kAXButtonRole, kAXCheckBoxRole, kAXRadioButtonRole, kAXStaticTextRole,
+                     kAXTextFieldRole, kAXPopUpButtonRole, kAXSliderRole]
+        guard let role = attribute(element, kAXRoleAttribute) as? String, roles.contains(role),
+              let region = frame(of: element), region.contains(point) else { return nil }
+        var ownerPID: pid_t = 0
+        guard AXUIElementGetPid(element, &ownerPID) == .success,
+              let elementWindow = attribute(element, kAXWindowAttribute),
+              CFGetTypeID(elementWindow) == AXUIElementGetTypeID(),
+              let elementWindowFrame = frame(of: elementWindow as! AXUIElement) else { return nil }
+        let canonicalID = context.canonicalVisualWindowID(for: target.windowID ?? "")
+        let window = canonicalID.flatMap { id in context.capturedWindows.first { $0.id == id } }
+            ?? (target.nativeControlID?.isEmpty == false
+                ? ScreenWindowGrounding.uniqueCapturedWindow(ownerPID: ownerPID, accessibilityFrame: elementWindowFrame,
+                                                              capturedWindows: context.capturedWindows) : nil)
+        guard let window, ownerPID == window.ownerPID,
+              ScreenWindowGrounding.framesMatch(elementWindowFrame, window.frame) else { return nil }
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        let currentWindows: [CapturedWindowEvidence] = currentWindowInfo().compactMap { info in
+            guard let pid = info[kCGWindowOwnerPID as String] as? pid_t, pid != ownPID,
+                  let id = info[kCGWindowNumber as String] as? CGWindowID,
+                  let bounds = appKitFrame(from: info) else { return nil }
+            return CapturedWindowEvidence(id: "visual-window-\(id)", windowID: id,
+                                          ownerPID: pid, applicationName: "", frame: bounds)
+        }
+        guard ScreenWindowGrounding.regionIsVisible(region, point: point, window: window,
+            displayFrame: context.displayFrame, currentWindows: currentWindows) else { return nil }
+        return region
+    }
+
     @MainActor static func resolveGeneric(_ target: PointingTarget, context: VisualTurnContext,
                                           currentFrame: CGRect) throws -> CGPoint {
         let ownPID = ProcessInfo.processInfo.processIdentifier

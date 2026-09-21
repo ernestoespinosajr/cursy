@@ -11,13 +11,14 @@ enum HomeHoverPolicy {
 
     static func intent(presentation: HomePresentation, inTrigger: Bool, inPanel: Bool,
                        busy: Bool, dragging: Bool, suppressed: Bool,
-                       voiceOver: Bool, closing: Bool = false) -> HomeHoverIntent {
+                       voiceOver: Bool, closing: Bool = false,
+                       setupRequired: Bool = false) -> HomeHoverIntent {
         guard presentation != .detached else { return .none }
         if presentation == .hidden {
             return (inTrigger || (closing && inPanel)) && !dragging && !suppressed ? .open : .none
         }
         if presentation == .compact && inTrigger && !dragging && !suppressed { return .open }
-        guard !inTrigger, !inPanel, !busy, !dragging, !voiceOver else { return .none }
+        guard !inTrigger, !inPanel, !busy, !dragging, !voiceOver, !setupRequired else { return .none }
         return .hide
     }
 }

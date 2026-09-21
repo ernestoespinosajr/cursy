@@ -13,6 +13,7 @@ import CoreGraphics
 import Foundation
 
 final class GlobalPushToTalkShortcutMonitor: ObservableObject {
+    var isSuspended = false
     let shortcutTransitionPublisher = PassthroughSubject<BuddyPushToTalkShortcut.ShortcutTransition, Never>()
 
     private var globalEventTap: CFMachPort?
@@ -109,6 +110,7 @@ final class GlobalPushToTalkShortcutMonitor: ObservableObject {
         }
 
         let eventKeyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+        if isSuspended { return Unmanaged.passUnretained(event) }
         let shortcutTransition = BuddyPushToTalkShortcut.shortcutTransition(
             for: eventType,
             keyCode: eventKeyCode,

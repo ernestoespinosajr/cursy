@@ -6,6 +6,12 @@ enum VisualAnnotationStyle: String, Codable, CaseIterable, Identifiable {
     case cursor, circle, arrow, rectangle, label
     var id: String { rawValue }
 
+    /// Presentation belongs to the agent, never the retired visualAnnotationStyle preference.
+    /// Older/automatic decisions and legacy fallback retain the safe cursor presentation.
+    static func resolve(agentChoice: Self?) -> Self {
+        agentChoice ?? .cursor
+    }
+
     func title(spanish: Bool) -> String {
         switch self {
         case .cursor: return "Cursor"
@@ -18,24 +24,34 @@ enum VisualAnnotationStyle: String, Codable, CaseIterable, Identifiable {
 }
 
 /// Presentation only: constructed AFTER localization and freshness validation.
-/// Focus marks are fixed-size, never an invented bounding box for an element.
+/// A region is supplied only when native geometry has been verified in full.
 struct VisualAnnotation: Equatable {
+    let id = UUID()
     let style: VisualAnnotationStyle
     let point: CGPoint
     let displayFrame: CGRect
     let label: String
+    let region: CGRect?
 
-    init?(style: VisualAnnotationStyle, point: CGPoint, displayFrame: CGRect, label: String) {
+    init?(style: VisualAnnotationStyle, point: CGPoint, displayFrame: CGRect, label: String,
+          region: CGRect? = nil) {
         let values = [point.x, point.y, displayFrame.minX, displayFrame.minY,
                       displayFrame.width, displayFrame.height]
         guard values.allSatisfy(\.isFinite), displayFrame.width >= 100,
               displayFrame.height >= 100, point.x >= displayFrame.minX,
               point.x < displayFrame.maxX, point.y > displayFrame.minY,
               point.y <= displayFrame.maxY, !label.isEmpty, label.count <= 120 else { return nil }
-        self.style = style
+        if let region {
+            guard [region.minX, region.minY, region.width, region.height].allSatisfy(\.isFinite),
+                  region.width > 0, region.height > 0, displayFrame.contains(region),
+                  region.contains(point) else { return nil }
+        }
+        // A point does not establish a paragraph's extent. Keep it a precise cue.
+        self.style = (style == .rectangle || style == .circle) && region == nil ? .cursor : style
         self.point = point
         self.displayFrame = displayFrame
         self.label = label
+        self.region = region
     }
 
     var localPoint: CGPoint {
@@ -48,83 +64,39 @@ struct VisualAnnotation: Equatable {
                        y: point.y + (point.y > displayFrame.height / 2 ? -44 : 44))
     }
 
+    var localRegion: CGRect? {
+        region.map { CGRect(x: $0.minX - displayFrame.minX, y: displayFrame.maxY - $0.maxY,
+                            width: $0.width, height: $0.height) }
+    }
+
+    var focusBounds: CGRect {
+        let bounds = localRegion ?? CGRect(origin: localPoint, size: .zero)
+        return bounds.insetBy(dx: -6, dy: -6)
+            .intersection(CGRect(origin: .zero, size: displayFrame.size))
+    }
+
+    var usesEllipse: Bool {
+        guard style == .circle else { return false }
+        return CGRect(origin: .zero, size: displayFrame.size).contains(ellipseBounds)
+    }
+
+    var ellipseBounds: CGRect {
+        let bounds = focusBounds
+        return CGRect(x: bounds.midX - bounds.width / sqrt(2), y: bounds.midY - bounds.height / sqrt(2),
+                      width: bounds.width * sqrt(2), height: bounds.height * sqrt(2))
+    }
+
     func labelCenter(size: CGSize) -> CGPoint {
         let point = localPoint
-        let preferredY = point.y + 42 + size.height / 2
-        let aboveY = point.y - 42 - size.height / 2
+        let bounds = usesEllipse ? ellipseBounds
+            : (style == .rectangle || style == .circle ? focusBounds
+                : localRegion ?? CGRect(origin: point, size: .zero))
+        let gap: CGFloat = style == .label ? 12 : 18
+        let preferredY = bounds.maxY + gap + size.height / 2
+        let aboveY = bounds.minY - gap - size.height / 2
         return CGPoint(
             x: min(max(point.x, size.width / 2 + 6), displayFrame.width - size.width / 2 - 6),
-            y: min(max(preferredY + size.height / 2 + 6 <= displayFrame.height ? preferredY : aboveY,
+            y: min(max(aboveY - size.height / 2 >= 6 ? aboveY : preferredY,
                        size.height / 2 + 6), displayFrame.height - size.height / 2 - 6))
-    }
-}
-
-struct VisualAnnotationView: View {
-    let annotation: VisualAnnotation
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
-
-    private var labelSize: CGSize {
-        let maximumWidth = min(240, annotation.displayFrame.width - 16)
-        let font = NSFont.systemFont(ofSize: 12, weight: .semibold)
-        let bounds = (annotation.label as NSString).boundingRect(
-            with: CGSize(width: maximumWidth - 16, height: 38),
-            options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: [.font: font])
-        return CGSize(width: min(maximumWidth, ceil(bounds.width) + 16),
-                      height: min(54, ceil(bounds.height) + 16))
-    }
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Canvas { context, _ in
-                let point = annotation.localPoint
-                var path = Path()
-                switch annotation.style {
-                case .circle:
-                    path.addEllipse(in: CGRect(x: point.x - 25, y: point.y - 25, width: 50, height: 50))
-                case .rectangle:
-                    path.addRoundedRect(in: CGRect(x: point.x - 36, y: point.y - 23, width: 72, height: 46),
-                                        cornerSize: CGSize(width: 8, height: 8))
-                case .arrow:
-                    let tail = annotation.arrowTail
-                    let angle = atan2(tail.y - point.y, tail.x - point.x)
-                    path.move(to: tail)
-                    path.addLine(to: point)
-                    for offset in [-0.5, 0.5] {
-                        path.move(to: CGPoint(x: point.x + 12 * cos(angle + offset),
-                                             y: point.y + 12 * sin(angle + offset)))
-                        path.addLine(to: point)
-                    }
-                case .label:
-                    path.addEllipse(in: CGRect(x: point.x - 5, y: point.y - 5, width: 10, height: 10))
-                case .cursor: break
-                }
-                // Dual stroke stays readable on both light and dark application content.
-                context.stroke(path, with: .color(.black.opacity(0.85)),
-                               style: StrokeStyle(lineWidth: contrast == .increased ? 6 : 5, lineCap: .round))
-                context.stroke(path, with: .color(.white), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-            }
-            Text(annotation.label)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .padding(8)
-                .frame(width: labelSize.width, height: labelSize.height)
-                .background {
-                    if reduceTransparency {
-                        RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .windowBackgroundColor))
-                    } else {
-                        RoundedRectangle(cornerRadius: 10).fill(.regularMaterial)
-                    }
-                }
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(.primary.opacity(0.35), lineWidth: 1))
-                .position(annotation.labelCenter(size: labelSize))
-        }
-        .frame(width: annotation.displayFrame.width, height: annotation.displayFrame.height)
-        .clipped()
-        .allowsHitTesting(false)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(annotation.label)
     }
 }

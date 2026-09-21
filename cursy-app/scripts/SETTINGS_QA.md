@@ -1,17 +1,94 @@
 # tsk007 — Home/settings acceptance
 
-## F1: Home prototype with notch hover
+## Regression gate: selection + integrated microphone (2026-09-21)
 
-Build/Run the Cursy scheme in Xcode (never terminal xcodebuild). Open Cursy's
-menu-bar panel and choose **Probar Home · Beta / Try Home · Beta**, or hold the
-pointer at the real notch for 180 ms. External screens without a notch retain the
-menu entry and detached window; no invisible full-width activation zone.
+- Select ordinary non-sensitive text in a native editor, a browser document, and
+  an Electron-style conversation. Repeat by drag, double click, Shift+arrows and
+  Select All. Offer must preserve the exact selection; app-provided toolbars stay
+  unobstructed. The reported ChatGPT case is a QA fixture, never a runtime rule.
+- Selection must work before and after opening/closing its editor. Reselect,
+  scroll, switch apps or cancel during the AX lookup; no stale offer may reopen.
+- Secure fields and missing accessible selection produce no guessed context;
+  clipboard and entire document must remain untouched. Mouse anchor fallback is
+  placement only, not a claim of exact selection geometry.
+- Test system default and explicitly selected integrated mic. UI must stay
+  responsive while opening/closing; meter starts only on real input. No input in
+  five seconds means a timeout notice. No recording/upload. Close during startup,
+  navigate away, press Talk and unplug selected input. A closing test blocks a
+  second recorder and offers explicit retry after release.
+- Repeat with a different input, then return to system default in legacy and
+  Realtime capture. Missing UID must fail rather than use another mic silently.
+- Offline tests do not validate hardware or cross-app AX support. ChatGPT host
+  is unavailable to the current automation tool; physical acceptance is pending.
 
-This increment is a read-only projection of the existing temporary session.
-It adds no microphone engine, network request, model, persistent conversation,
-text input, agent, or permission prompt. Talk remains Control + Option. Settings
-now opens the integrated General/Cursor/Privacy sidebar; remaining preferences
-and text input belong to later phases.
+## Native F3 / selection port — physical acceptance still required
+
+Offline evidence:191 tests/24 suites, 28 prototype tests; Xcode UI Build Succeeded
+13:15 and final Run13:16 on2026-09-21. No live audio/model request during checks.
+
+- Open by hover: external editor retains key focus. Click composer: editable,
+  Enter sends once, Shift+Enter inserts newline, IME doesn't submit prematurely.
+  Switch chats: draft/history/selected fragment remain isolated. Stop/reset while
+  streaming: no late response or automatic audio; text sends no screen capture.
+- Select synthetic text in a native editor and browser. Verify offer above the
+  selection/exposed action menu, below if necessary, absent if crowded/unsupported.
+  Secure fields must never offer. No clipboard changes. Click offer: material
+  morphs, glyphs never stretch. Escape/outside/key/scroll clears old offer.
+- Send selected text: fresh context only. Microphone: actual greeting completes
+  before first capture; notification emerges below notch. Finish via button/PTT;
+  close/cancel/new chat must prevent any late greeting from restarting capture.
+- Microphone Settings: enumerate devices, choose UID, unplug/reconnect, system
+  default. Test is local, maximum15s; stop on route/page/Home close or Talk.
+  Denied permission and a dismissed permission prompt must not reopen capture.
+- Record Control+Shift+K, hold/release key and modifiers in either order. Escape
+  cancels recording; reserved combos reject; reset restores Control+Option.
+  Other apps' global conflicts cannot all be detected: test chosen combination.
+- Read text aloud off/on: only on sends completed reply for output-only Realtime.
+  Neither opening Home nor selection offer accesses network/audio. Provider tests
+  require explicit synthetic requests; offline tests do not establish latency.
+- Check neutral borders/captions on bright/dark backgrounds, Increase Contrast,
+  Reduce Motion, VoiceOver, two displays and full screen. Icons/marks retain tint.
+
+## Official Home with notch hover
+
+Build/Run the Cursy scheme in Xcode (never terminal xcodebuild). Click Cursy's
+status icon to open Home directly, or hold the pointer at the real notch for
+180 ms. External screens retain the status icon and detached window; no invisible
+full-width activation zone. There is no legacy menu or Beta entry in the live UI.
+
+Home projects the existing temporary session. Talk remains Control + Option.
+General/Cursor/Privacy/Help are integrated into the same gradient surface.
+There is no manual objective field or text-message composer yet.
+Opening Home adds no microphone engine, network request, model, persistence,
+capture or permission request. Permission buttons act only on explicit clicks.
+
+### Legacy-menu migration (2026-09-21)
+
+- Status click opens hidden Home, expands a compact island, and closes expanded
+  or detached Home. Repeated clicks/reveal interruption must leave one panel.
+- General retains language/model, without a manual objective field. Intent comes
+  from the spoken request and current conversation context. + still creates a new
+  temporary chat. Do not add another objective configuration step.
+- Privacy retains screen consent, refresh, spatial context and adds all four
+  permission statuses/actions, including Accessibility's Finder/settings route.
+  Screen Content appears after Screen Recording is granted. Existing defaults
+  are untouched; granting OS access must not enable screen sharing.
+- On first setup/revoked access, open Privacy. Keep Home visible while completing
+  setup (even outside its frame), but allow X/Escape. Verify denial, return from
+  System Settings and enabling Start only when permissions are ready. Do not reset
+  working TCC permissions for this test; use a separate authorized test environment.
+- Help provides replay/start introduction, feedback mail link and Quit. Confirm
+  introduction dismisses Home, feedback opens a draft (never sends), and Quit uses
+  the existing stop lifecycle. Do not actually send feedback as a QA step.
+- Home remains non-key/non-main: hover, clicks, compacting and X/Escape must not
+  steal the external app's keyboard focus. Keep the setup autohide guard.
+  PTT must still open the automatic voice island; the retired menu's close signal
+  must not suppress it. Onboarding dismissal remains separate from PTT.
+
+Evidence after removing manual objective: 184 tests/22 suites pass (artifacts
+`/private/tmp/cursy-native-regression.3fiQqA`), Xcode UI Build Succeeded11:21 and
+clean diff check. These verify compilation and pure routing/retention decisions,
+not the physical focus or permission flows above. No app restart or TCC reset.
 
 - Expand/collapse with the chevrons; the PiP button detaches the panel. Detached
   mode can be dragged by the background. Pin reattaches at the current screen's
@@ -74,8 +151,8 @@ and text input belong to later phases.
   offline renders do not establish live responsiveness or accessibility acceptance.
 - An interrupted or failed turn must not remain labelled “Thinking”. Older
   partial text is not a success receipt; source history remains bounded.
-- Confirm the frontmost external app stays active when opening, clicking,
-  collapsing or dragging Home. No text caret should move from the external app.
+- Confirm the frontmost external app stays active on opening/hover/clicks and
+  closing Home. No objective editor or hidden text field may acquire focus.
 - Close via X or Escape. Escape is observed, not consumed: existing cancellation
   behavior and the external app's shortcut still apply. It must not reopen under
   the same stationary pointer: leave the notch/panel and return to reopen.
@@ -123,7 +200,7 @@ open p95 ≤150 ms (target, not measured). Full keyboard traversal, VoiceOver,
 AirPods transitions, migration, shortcut conflicts and onboarding remain gates.
 No Worker changes/deployment are required by F1. Close Home to dismiss it;
 avoid the notch or detach to keep it independent of hover (no disable toggle yet).
-the original menu, defaults, cursor and voice pipeline remain available.
+The original menu is retired; defaults, cursor and voice pipeline are preserved.
 
 HomeNotchInteractionTests cover docking priorities, explicit dismissal, lateral
 space/negative origins, camera-preserving reveal, continuous neck and compact hover.
@@ -136,7 +213,7 @@ They do not validate real animation callbacks or physical multi-monitor handoff.
   speaking; old callbacks must not change the selected chat or restart its audio.
   New chat clears active context, not other sidebar records. Up to 20 temporary
   chats, no silent eviction; quit clears them. Durable storage is not implemented.
-- Gear and sidebar Settings show General/Cursor/Privacy within the same Home.
+- Gear and sidebar Settings show General/Cursor/Privacy/Help within the same Home.
   Back restores chats and selection. Collapse sidebar, resize on a smaller external
   monitor, scroll long content: no clipped controls or hidden content under camera.
 - Choose all five cursor colors; native glass and shadow match, shape/size stay
@@ -177,3 +254,39 @@ measured latency or physical animation behavior based on offline evidence alone.
   immediate. Changing these visual states must not restart audio or delay first PCM.
 - Offline evidence: 173 tests/22 suites, including HomeSpatialHintTests for state,
   placement and symbols. Static chats/cursor renders check layout, not live timing.
+# Selección contextual compacta — seguimiento 2026-09-21
+
+- Regresión Claude: selección multilínea muy ancha con menú desplazado a izquierda;
+  Cursy centrado encima del menú entero, no al centro del párrafo ni al lado.
+- Regresión Outlook: menú con una única acción; oferta e input deben evitar todo
+  el contenedor, con su padding. Variar ancho de ventana y sentido del arrastre.
+  Confirmar que GPT sigue colocado correctamente y que texto estático/botones
+  lejanos no desplazan la barra. Son casos QA, no excepciones por nombre de app.
+- Repetir los tres casos aportados por usuario: último párrafo, dos bullets y
+  primera línea. Arrastrar en ambos sentidos. Oferta centrada con menú propio,
+ 12pt encima, sin superposición. Input debe mantener la misma exclusión al abrir.
+- Verificar primera selección, cambios rápidos de rango y menú que aparece con
+  retraso; no conservar posición del rango anterior. Cerca del borde superior,
+  fallback debajo; también con monitor de origen negativo. Menú no expuesto por
+  AX sigue requiriendo aceptación separada: no afirmar detección universal.
+- Repetir en Comet, Claude y GPT como casos QA, no reglas de producto. Activar la
+  app físicamente y seleccionar texto de respuesta/documento, no solo un input.
+  Registrar por separado texto AX, aparición de barra, colocación sobre el menú
+  propio y click/morph. Una selección automatizada en segundo plano no es PASS.
+- Primera entrada a un runtime con AX diferida: permitir el retry tras2.3s;
+  siguientes selecciones no deben reiniciar el debounce. Nueva selección, cambio
+  de ventana/app, scroll o Esc durante la espera nunca muestran la selección vieja.
+- Seleccionar entre varios nodos/párrafos: contexto debe conservar el rango completo.
+  Teclado sin bounds y campos protegidos omiten la oferta; no recuperar por copy/OCR.
+- Suite offline219/26 incluye el buscador real con backend simulado; no prueba
+  las respuestas AX particulares ni menús de las versiones instaladas.
+- Oferta solo texto, sin logo,160×32 en español; click conserva input/mic.
+- Probar selección con mouse y teclado en documento nativo y app web, incluyendo
+  una con menú propio. Ninguna barra debe cubrir ese menú ni un campo seguro.
+- Las notificaciones AX tardías conservan el anclaje de mouse por máximo1s en
+  el mismo proceso; mouse-down, tecla, scroll y cambio de app lo invalidan.
+- Apps compatibles pueden recibir `AXManualAccessibility=true` solo si el
+  atributo es escribible y no estaba activo. No modifica permisos del sistema;
+  no fuerza `AXEnhancedUserInterface`, clipboard, OCR ni acceso a texto completo.
+- 208 tests/25 suites offline y28 Node pasan. Activación real del árbol y caso
+  GPT requieren prueba física; la automatización no permite operar la app host.

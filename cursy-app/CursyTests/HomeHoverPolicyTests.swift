@@ -51,6 +51,30 @@ struct HomeHoverPolicyTests {
         #expect(HomeHoverPolicy.hideDelay < 1.5)
     }
 
+    @Test func setupKeepsHomeVisibleWithoutBlockingExplicitClose() {
+        for presentation in [HomePresentation.expanded, .compact] {
+            #expect(HomeHoverPolicy.intent(presentation: presentation, inTrigger: false, inPanel: false,
+                busy: false, dragging: false, suppressed: false, voiceOver: false, setupRequired: true) == .none)
+        }
+        #expect(HomeHoverPolicy.intent(presentation: .hidden, inTrigger: true, inPanel: false,
+            busy: false, dragging: false, suppressed: true, voiceOver: false, setupRequired: true) == .none)
+    }
+
+    @Test func statusItemUsesOneHomeAndExpandsTheVoiceIsland() {
+        #expect(HomePresentation.afterStatusItemClick(from: .hidden) == .expanded)
+        #expect(HomePresentation.afterStatusItemClick(from: .compact) == .expanded)
+        #expect(HomePresentation.afterStatusItemClick(from: .expanded) == .hidden)
+        #expect(HomePresentation.afterStatusItemClick(from: .detached) == .hidden)
+    }
+
+    @Test func settingsSurfaceIncludesHelpAndRoutesSetupToPermissions() {
+        #expect(HomeSidebarSection.settingsLanding(needsSetup: true) == .privacy)
+        #expect(HomeSidebarSection.settingsLanding(needsSetup: false) == .general)
+        #expect(HomeSidebarSection.allCases == [.chats, .general, .voice, .microphone, .shortcuts, .cursor, .privacy, .help])
+        #expect(HomeSidebarSection.help.title(spanish: true) == "Ayuda")
+        #expect(HomeSidebarSection.help.title(spanish: false) == "Help")
+    }
+
     @Test(arguments: [CGFloat(320), 620])
     func cameraNeckHasOpenShoulders(width: CGFloat) {
         let bounds = CGRect(x: -80, y: 30, width: width, height: 84)

@@ -13,6 +13,18 @@ struct CapturedWindowEvidence: Sendable {
 /// screen content. OpenAI remains responsible for understanding the image and
 /// selecting the target coordinates.
 enum ScreenWindowGrounding {
+    /// Reject any partially occluded region, even when its center remains visible.
+    static func regionIsVisible(_ region: CGRect, point: CGPoint, window: CapturedWindowEvidence,
+                                displayFrame: CGRect, currentWindows: [CapturedWindowEvidence]) -> Bool {
+        guard [region.minX, region.minY, region.width, region.height].allSatisfy(\.isFinite),
+              region.width > 0, region.height > 0, region.contains(point),
+              displayFrame.contains(region), window.frame.contains(region),
+              let index = currentWindows.firstIndex(where: { $0.windowID == window.windowID }),
+              currentWindows[index].ownerPID == window.ownerPID,
+              framesMatch(currentWindows[index].frame, window.frame) else { return false }
+        return !currentWindows.prefix(index).contains { $0.frame.intersects(region) }
+    }
+
     /// Current windows are supplied in front-to-back order, from one OS snapshot.
     /// Same evaluator used by production and synthetic multi-window integration tests.
     static func resolve(target: PointingTarget, context: VisualTurnContext, currentFrame: CGRect,

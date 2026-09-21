@@ -3,6 +3,13 @@ import CoreGraphics
 
 enum HomePresentation: Equatable {
     case hidden, compact, expanded, detached
+
+    static func afterStatusItemClick(from presentation: Self) -> Self {
+        switch presentation {
+        case .hidden, .compact: return .expanded
+        case .expanded, .detached: return .hidden
+        }
+    }
 }
 
 enum HomeActivity: Equatable {

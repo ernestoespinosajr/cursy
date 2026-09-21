@@ -17,6 +17,12 @@ Convertir una petición compuesta en un objetivo y pasos recuperables. La guía 
 
 ## 2. Necesidades y experiencia
 
+Referencia de diseño 2026-09-21: `prototypes/notch-voice/guidance-contract.md` y
+laboratorio de tsk005 muestran origen/ruta/destino como un grupo de hasta tres
+marcas. Es simulación, no implementación de este ticket; todas pertenecen al paso
+vigente y se retiran juntas. Sin controles individuales de forma/borrado; conservar
+Pausar/Terminar como control de la ayuda completa.
+
 Mostrar solo el paso actual y una frase breve; controles Pausar/Reanudar/Terminar y «listo». El usuario no debe volver a explicar el objetivo al abrir otra app.
 
 ## 3. Requisitos y no objetivos
@@ -58,4 +64,3 @@ Gate: tres flujos distintos de ≥3 pasos, continuidad sin repetir objetivo, nin
 Validación común: Swift Testing para contratos; Xcode para UI/build completo, nunca xcodebuild por terminal. Aplicar regresiones de sesiones/visualización y Worker cuando se toquen sus rutas. Pruebas reales con pantallas/datos privados requieren autorización específica. Despliegue, cuentas y compras no autorizados por este plan. Registrar evidencia por fase; no cerrar antes de sus gates.
 
 Dispatch: `$cce-dispatch execute tsk009-persistent-walkthroughs`
-

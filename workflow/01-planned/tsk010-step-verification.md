@@ -17,6 +17,12 @@ Continuar una guía cuando el usuario realiza la acción, con observación tempo
 
 ## 2. Necesidades y experiencia
 
+Referencia 2026-09-21: prototipo adaptativo tsk005 y contrato propuesto en
+`prototypes/notch-voice/guidance-contract.md`. La muestra de arrastrar/soltar usa
+eventos locales, no demuestra percepción: en producción el gesto por sí solo no
+prueba que la app aceptó el archivo. Invalidar el grupo completo ante escena
+obsoleta; avanzar únicamente con resultado verificado y consentimiento vigente.
+
 Usuario activa seguimiento de la guía; indicador permanente de observación, pausa inmediata, actualización breve del siguiente paso. Incertidumbre pide confirmar, no inventa progreso.
 
 ## 3. Requisitos y no objetivos
@@ -58,4 +64,3 @@ Gate: cero avances falsos en 60 ensayos negativos/ambiguos y ≥90% detección d
 Validación común: Swift Testing para contratos; Xcode para UI/build completo, nunca xcodebuild por terminal. Aplicar regresiones de sesiones/visualización y Worker cuando se toquen sus rutas. Pruebas reales con pantallas/datos privados requieren autorización específica. Despliegue, cuentas y compras no autorizados por este plan. Registrar evidencia por fase; no cerrar antes de sus gates.
 
 Dispatch: `$cce-dispatch execute tsk010-step-verification`
-

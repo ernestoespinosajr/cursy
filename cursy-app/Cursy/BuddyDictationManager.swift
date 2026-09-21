@@ -14,7 +14,7 @@ import Foundation
 import Speech
 
 enum BuddyPushToTalkShortcut {
-    enum ShortcutOption {
+    enum ShortcutOption: String, CaseIterable {
         case shiftFunction
         case controlOption
         case shiftControl
@@ -92,15 +92,20 @@ enum BuddyPushToTalkShortcut {
         case keyUp
     }
 
-    static let currentShortcutOption: ShortcutOption = .controlOption
+    static var currentShortcutOption: ShortcutOption {
+        ShortcutOption(rawValue: UserDefaults.standard.string(forKey: "pushToTalkShortcut") ?? "") ?? .controlOption
+    }
     static let pushToTalkKeyCode: UInt16 = 49 // Space
-    static let pushToTalkDisplayText = currentShortcutOption.displayText
-    static let pushToTalkTooltipText = "push to talk (\(pushToTalkDisplayText))"
+    static var pushToTalkDisplayText: String { currentShortcutOption.displayText }
+    static var pushToTalkTooltipText: String { "push to talk (\(pushToTalkDisplayText))" }
 
     static func shortcutTransition(
         for event: NSEvent,
         wasShortcutPreviouslyPressed: Bool
     ) -> ShortcutTransition {
+        if let shortcut = HomeKeyboardShortcut.current {
+            return shortcut.transition(type: event.type, keyCode: event.keyCode, flags: event.modifierFlags, pressed: wasShortcutPreviouslyPressed)
+        }
         guard let shortcutEventType = shortcutEventType(for: event.type) else { return .none }
 
         return shortcutTransition(
@@ -117,6 +122,10 @@ enum BuddyPushToTalkShortcut {
         modifierFlagsRawValue: UInt64,
         wasShortcutPreviouslyPressed: Bool
     ) -> ShortcutTransition {
+        if let shortcut = HomeKeyboardShortcut.current {
+            let type: NSEvent.EventType = eventType == .keyDown ? .keyDown : eventType == .keyUp ? .keyUp : .flagsChanged
+            return shortcut.transition(type: type, keyCode: keyCode, flags: NSEvent.ModifierFlags(rawValue: UInt(modifierFlagsRawValue)), pressed: wasShortcutPreviouslyPressed)
+        }
         guard let shortcutEventType = shortcutEventType(for: eventType) else { return .none }
 
         return shortcutTransition(
@@ -181,6 +190,8 @@ enum BuddyPushToTalkShortcut {
         }
 
         let matchesModifierFlags = modifierFlags.isSuperset(of: pushToTalkModifierFlags)
+
+        if wasShortcutPreviouslyPressed && !matchesModifierFlags { return .released }
 
         if shortcutEventType == .keyDown
             && keyCode == pushToTalkKeyCode
@@ -263,7 +274,7 @@ final class BuddyDictationManager: NSObject, ObservableObject {
     }
 
     private let transcriptionProvider: any BuddyTranscriptionProvider
-    private let audioEngine = AVAudioEngine()
+    private var audioEngine = AVAudioEngine()
     private var activeTranscriptionSession: (any BuddyStreamingTranscriptionSession)?
     private var activeStartSource: BuddyDictationStartSource?
     private var draftCallbacks: BuddyDictationDraftCallbacks?
@@ -546,6 +557,8 @@ final class BuddyDictationManager: NSObject, ObservableObject {
         self.activeTranscriptionSession = activeTranscriptionSession
         print("🎙️ BuddyDictationManager: provider ready, starting audio engine")
 
+        audioEngine = AVAudioEngine()
+        try HomeMicrophoneRoute.apply(to: audioEngine)
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
 

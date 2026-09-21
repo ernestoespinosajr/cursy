@@ -31,14 +31,14 @@ struct RenderHomePrototype {
                 HomeContentView(presentation: .compact, activity: .listening, exchanges: [],
                     isSpanish: true, screenSharingEnabled: true, notice: nil,
                     audioPowerLevel: 0.75, notchWidth: 208, notchHeight: 38,
-                    onPresent: { _ in }, onSettings: {})
+                    onPresent: { _ in })
                     .frame(width: 460, height: 52)
                     RoundedRectangle(cornerRadius: 7).fill(.black).frame(width: 208, height: 38)
                 }
                 HomeContentView(presentation: .compact, activity: .listening, exchanges: [],
                     isSpanish: true, screenSharingEnabled: true, notice: nil,
                     audioPowerLevel: 0.75,
-                    onPresent: { _ in }, onSettings: {})
+                    onPresent: { _ in })
                     .frame(width: 320, height: 58)
                 ZStack(alignment: .top) {
                 HomeContentView(presentation: .expanded, activity: .ready, exchanges: [exchange],
@@ -51,7 +51,7 @@ struct RenderHomePrototype {
                         CursyTintPicker(spanish: true)
                         Spacer()
                     }.padding(24).frame(maxWidth: .infinity, alignment: .leading)) },
-                    onPresent: { _ in }, onSettings: {}, sidebarSection: section)
+                    onPresent: { _ in }, sidebarSection: section)
                     .frame(width: 840, height: 592)
                     RoundedRectangle(cornerRadius: 7).fill(.black).frame(width: 208, height: 38)
                 }

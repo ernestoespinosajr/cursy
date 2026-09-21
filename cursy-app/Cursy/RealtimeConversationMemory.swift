@@ -30,6 +30,7 @@ extension ConversationSession {
         if let objective {
             items.append(item(role: "user", text: "My conversation objective is: " + objective))
         }
+        if let selectedText { items.append(item(role: "user", text: selectedText.sourceMessage)) }
         for request in requests.suffix(Self.historyLimit) {
             items.append(item(role: "user", text: request.transcript))
             if let exchange = exchanges.first(where: { $0.turnID == request.turnID }) {

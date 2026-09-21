@@ -251,7 +251,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute('dat
 function showConversation(show){
  clearTimeout(enterTimer);clearTimeout(exitTimer);expanded=show;
  setSurface(stage.querySelector('.conversation'),show);
- setSurface(stage.querySelector('.voice'),!show&&['connecting','listening','processing','responding'].includes(mode));
+ setSurface(stage.querySelector('.voice'),!show&&['connecting','listening','processing','responding','greeting'].includes(mode));
 }
 function setSurface(el,show){
  if(!el)return;
@@ -260,7 +260,7 @@ function setSurface(el,show){
 }
 function setMode(next){
  clearTimeout(enterTimer);clearTimeout(exitTimer);mode=next;syncControls();
- const title={idle:'Listo para ayudarte',connecting:'Conectando…',listening:'Te escucho',processing:'Pensando',responding:'Responde',conversation:'Conversación'}[mode];
+ const title={idle:'Listo para ayudarte',connecting:'Conectando…',listening:'Te escucho',processing:'Pensando',responding:'Responde',greeting:'Cursy habla',conversation:'Conversación'}[mode];
  const voice=stage.querySelector('.voice');if(!voice)return;
  voice.setAttribute('aria-label',`${title}. Abrir conversación`);
  const label=voice.querySelector('.label,.side small');if(label)label.textContent=title;
@@ -299,4 +299,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){stopDemo();setMode(
 syncControls();
 </script>
 <script src="workspace.js"></script>
+<link rel="stylesheet" href="home-input.css">
+<script src="home-input-model.js"></script>
+<script src="home-input.js"></script>
+<link rel="stylesheet" href="annotations.css">
+<script src="guidance-geometry.js"></script>
+<script src="guidance-motion.js"></script>
+<script src="annotations.js"></script>
+<link rel="stylesheet" href="selection.css">
+<script src="selection-model.js"></script>
+<script src="selection.js"></script>
 </html>

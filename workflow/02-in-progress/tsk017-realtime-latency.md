@@ -1,6 +1,8 @@
 # tsk017 — Captura inmediata y menor latencia de respuesta
 
 Status: in-progress · Priority: high · Created/started: 2026-09-20
+User feedback (2026-09-21): «ya mejoró el tiempo». Qualitative improvement accepted;
+no quantitative latency, first-word/device matrix or F3 closure inferred.
 Authorization: user requests a new ticket, deeper design and implementation.
 Complexity: 8/10 (audio lifecycle7, integration8, testing8, rollout6).
 Owner: CCE Mobile + Write Swift; CCE AI Engineer / OpenAI Docs for API contracts.

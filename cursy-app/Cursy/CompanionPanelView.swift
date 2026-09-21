@@ -195,37 +195,7 @@ struct CompanionPanelView: View {
             }
 
             insetDivider
-            settingRow(icon: "scope", title: localized("Indicación", "Indication")) {
-                Picker(localized("Estilo de indicación", "Indication style"), selection: $companionManager.preferredAnnotationStyle) {
-                    ForEach(VisualAnnotationStyle.allCases) { style in
-                        Text(style.title(spanish: isSpanish)).tag(style)
-                    }
-                }
-                .labelsHidden().pickerStyle(.menu).fixedSize()
-                .help(localized("Estilo para la próxima indicación. También puedes pedir una figura por voz.",
-                                "Style for the next indication. You can also request a shape by voice."))
-            }
-            if companionManager.visualAnnotation != nil {
-                Button {
-                    companionManager.clearDetectedElementLocation()
-                } label: {
-                    Label(localized("Quitar indicación", "Clear indication"), systemImage: "xmark.circle")
-                }
-                .buttonStyle(.borderless)
-                .padding(.bottom, 10)
-                .onHover { hovering in
-                    if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                }
-            }
-
-            insetDivider
             VStack(alignment: .leading, spacing: 8) {
-                TextField(localized("Objetivo de la conversación (opcional)", "Conversation objective (optional)"),
-                          text: Binding(
-                            get: { companionManager.conversationSession.objective ?? "" },
-                            set: { companionManager.setConversationObjective($0) }))
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityLabel(localized("Objetivo de la conversación", "Conversation objective"))
                 Button(action: companionManager.startNewConversation) {
                     Label(localized("Nueva conversación", "New conversation"), systemImage: "plus.bubble")
                 }

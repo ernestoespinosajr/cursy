@@ -2,10 +2,7 @@ import AppKit
 import SwiftUI
 import Combine
 
-/// F1 is read-only. Becoming key is reserved for a future explicit text mode.
-private final class HomeReadOnlyPanel: NSPanel {
-    override var canBecomeKey: Bool { false }
-    override var canBecomeMain: Bool { false }
+private final class HomePanel: CursyEditingPanel {
     // HomePanelLayout already clamps each mode. AppKit's default visibleFrame
     // constraint would push an attached island back below the menu bar.
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
@@ -19,7 +16,6 @@ private final class HomeHostingView<Content: View>: NSHostingView<Content> {
 final class HomePanelController {
     private let companionManager: CompanionManager
     private let model = HomePresentationModel()
-    private let onSettings: () -> Void
     private var panel: NSPanel?
     private var displayID: UInt32?
     private var screenObserver: NSObjectProtocol?
@@ -42,9 +38,8 @@ final class HomePanelController {
     private var previousVoiceState: CompanionVoiceState = .idle
     private var dismissedDuringTurn = false
 
-    init(companionManager: CompanionManager, onSettings: @escaping () -> Void) {
+    init(companionManager: CompanionManager) {
         self.companionManager = companionManager
-        self.onSettings = onSettings
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -169,9 +164,10 @@ final class HomePanelController {
         }
         if !inTrigger && !inPanel { suppressHoverUntilExit = false }
         let intent = HomeHoverPolicy.intent(presentation: requestedPresentation,
-            inTrigger: inTrigger, inPanel: inPanel, busy: companionManager.voiceState != .idle,
+            inTrigger: inTrigger, inPanel: inPanel, busy: companionManager.voiceState != .idle || panel?.isKeyWindow == true,
             dragging: NSEvent.pressedMouseButtons != 0, suppressed: suppressHoverUntilExit,
-            voiceOver: NSWorkspace.shared.isVoiceOverEnabled, closing: autoClosing)
+            voiceOver: NSWorkspace.shared.isVoiceOverEnabled, closing: autoClosing,
+            setupRequired: !companionManager.allPermissionsGranted || !companionManager.hasCompletedOnboarding)
         return (intent, screen.map(Self.identifier))
     }
 
@@ -243,6 +239,16 @@ final class HomePanelController {
         updateHoverIntent()
     }
 
+    func toggle() {
+        if HomePresentation.afterStatusItemClick(from: requestedPresentation) == .expanded {
+            show()
+        } else {
+            hide()
+        }
+    }
+
+    func hide() { handlePresentationRequest(.hidden) }
+
     func show() {
         cancelHoverRequest()
         suppressHoverUntilExit = false
@@ -264,6 +270,11 @@ final class HomePanelController {
         transitionID = UUID()
         let request = transitionID
         requestedPresentation = presentation
+        if presentation == .hidden || presentation == .compact {
+            (panel as? CursyEditingPanel)?.endEditing()
+            companionManager.homeMicrophone.stop()
+            companionManager.homeShortcutRecorder.stop()
+        }
         let animation = Animation.timingCurve(0.23, 1, 0.32, 1,
             duration: HomeNotchInteraction.duration)
         if animated && wasVisible && previous != .hidden && presentation != .hidden &&
@@ -320,9 +331,9 @@ final class HomePanelController {
     }
 
     private func createPanel() {
-        let homePanel = HomeReadOnlyPanel(contentRect: .zero,
+        let homePanel = HomePanel(contentRect: .zero,
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        homePanel.title = "Cursy Home · Beta"
+        homePanel.title = "Cursy"
         homePanel.isReleasedWhenClosed = false
         homePanel.isFloatingPanel = true
         homePanel.hidesOnDeactivate = false
@@ -335,11 +346,7 @@ final class HomePanelController {
         homePanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         homePanel.isExcludedFromWindowsMenu = true
         let hostingView = HomeHostingView(rootView: HomeView(companionManager: companionManager,
-            model: model, onPresent: { [weak self] in self?.handlePresentationRequest($0) },
-            onSettings: { [weak self] in
-                self?.handlePresentationRequest(.hidden)
-                self?.onSettings()
-            }))
+            model: model, onPresent: { [weak self] in self?.handlePresentationRequest($0) }))
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = .clear
         homePanel.contentView = hostingView

@@ -114,6 +114,11 @@ struct BlueCursorView: View {
     @State private var notchActivationID: UUID?
     @State private var notchClickTask: Task<Void, Never>?
     @State private var notchClickScale: CGFloat = 1
+    @State private var annotationElapsed: Double = 0
+    @State private var annotationOpacity: Double = 1
+    @State private var playingAnnotationID: UUID?
+    @State private var annotationPlaybackRevision = UUID()
+    @State private var annotationPointer: CGPoint = .zero
 
     @State private var cursorPosition: CGPoint
     @State private var isCursorOnThisScreen: Bool
@@ -298,7 +303,10 @@ struct BlueCursorView: View {
 
             if let annotation = companionManager.visualAnnotation,
                annotation.style != .cursor, annotation.displayFrame == screenFrame {
-                VisualAnnotationView(annotation: annotation)
+                VisualAnnotationView(annotation: annotation,
+                    elapsed: playingAnnotationID == annotation.id ? annotationElapsed : 0,
+                    pointer: annotationPointer)
+                    .opacity(annotationOpacity)
             }
 
             SpatialTrailView(recorder: companionManager.spatialContextRecorder,
@@ -358,6 +366,9 @@ struct BlueCursorView: View {
             synchronizeNotchPresentation()
         }
         .onDisappear {
+            if companionManager.visualAnnotation?.displayFrame == screenFrame {
+                companionManager.clearDetectedElementLocation()
+            }
             navigationRevision = UUID()
             notchClickTask?.cancel()
             timer?.invalidate()
@@ -367,6 +378,9 @@ struct BlueCursorView: View {
         .onChange(of: companionManager.voiceState) { synchronizeNotchPresentation() }
         .onChange(of: companionManager.voiceNotchAnchor) { synchronizeNotchPresentation() }
         .onChange(of: companionManager.voiceNotchActivationID) { synchronizeNotchPresentation() }
+        .task(id: "\(companionManager.visualAnnotation?.id.uuidString ?? "none")-\(reduceMotion)") {
+            await playAnnotation()
+        }
         .onChange(of: companionManager.detectedElementScreenLocation) { newLocation in
             if newLocation == nil {
                 navigationRevision = UUID()
@@ -418,7 +432,9 @@ struct BlueCursorView: View {
             // If another screen's BlueCursorView is navigating to an element,
             // hide the cursor on this screen to prevent a duplicate buddy
             if companionManager.detectedElementScreenLocation != nil {
-                return false
+                return companionManager.visualAnnotation?.style != .cursor
+                    && companionManager.visualAnnotation != nil
+                    && companionManager.annotationArtistID == nil && isCursorOnThisScreen
             }
             return isCursorOnThisScreen
         case .navigatingToTarget, .pointingAtTarget:
@@ -442,6 +458,12 @@ struct BlueCursorView: View {
         timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
             let mouseLocation = NSEvent.mouseLocation
             self.isCursorOnThisScreen = self.screenFrame.contains(mouseLocation)
+            // This timer is installed on the main run loop by the view.
+            MainActor.assumeIsolated {
+                if self.companionManager.visualAnnotation?.displayFrame == self.screenFrame {
+                    self.annotationPointer = self.convertScreenPointToSwiftUICoordinates(mouseLocation)
+                }
+            }
             if self.notchFlightPhase != .following || self.shouldDockAtNotch { return }
 
             // During forward flight or pointing, the buddy is NOT interrupted by
@@ -559,6 +581,8 @@ struct BlueCursorView: View {
 
     /// Starts animating the buddy toward a detected UI element location.
     private func startNavigatingToElement(screenLocation: CGPoint) {
+        // Geometric tools own one coordinated ink/cursor clock, not the legacy flight.
+        if let annotation = companionManager.visualAnnotation, annotation.style != .cursor { return }
         // Don't interrupt welcome animation
         guard !showWelcome || welcomeText.isEmpty else { return }
         notchClickTask?.cancel()
@@ -598,6 +622,105 @@ struct BlueCursorView: View {
             guard revision == self.navigationRevision, self.buddyNavigationMode == .navigatingToTarget else { return }
             self.startPointingAtElement()
         }
+    }
+
+    @MainActor private func playAnnotation() async {
+        let playbackRevision = UUID()
+        annotationPlaybackRevision = playbackRevision
+        if let oldArtist = playingAnnotationID, companionManager.annotationArtistID == oldArtist {
+            companionManager.annotationArtistID = nil
+        }
+        if playingAnnotationID != nil {
+            buddyNavigationMode = .followingCursor
+            notchClickScale = 1
+        }
+        playingAnnotationID = nil
+        guard let annotation = companionManager.visualAnnotation, annotation.displayFrame == screenFrame else { return }
+        if annotation.style == .cursor {
+            if !shouldDockAtNotch { startNavigatingToElement(screenLocation: annotation.point) }
+            return
+        }
+        let identity = annotation.id
+        playingAnnotationID = identity
+        annotationElapsed = 0
+        annotationOpacity = 1
+        navigationRevision = UUID()
+        navigationAnimationTimer?.invalidate()
+        notchClickTask?.cancel()
+        notchFlightPhase = .following
+        notchClickScale = 1
+        navigationBubbleText = ""
+        navigationBubbleOpacity = 0
+        showWelcome = false
+        isReturningToCursor = false
+        let draws = annotation.style != .label && !reduceMotion
+        companionManager.annotationArtistID = draws ? identity : nil
+        buddyNavigationMode = draws ? .navigatingToTarget : .followingCursor
+        cursorPresentationState = .pointingArrow
+        let drawing = AnnotationDrawing(annotation: annotation)
+        let source = cursorPosition
+        let first = VisualAnnotationMotion.cursorCenter(tip: drawing.tip(progress: 0))
+        let last = VisualAnnotationMotion.cursorCenter(tip: drawing.tip(progress: 1))
+        var returnDestination: CGPoint?
+        let duration = draws ? VisualAnnotationMotion.total
+            : (reduceMotion ? 0.15 : VisualAnnotationMotion.caption + VisualAnnotationMotion.typingDuration(annotation.label))
+        let started = ProcessInfo.processInfo.systemUptime
+        defer {
+            // A cancelled task must never reset the replacement's cursor or frame clock.
+            if companionManager.visualAnnotation?.id == identity, annotationPlaybackRevision == playbackRevision {
+                notchClickScale = 1
+                buddyNavigationMode = .followingCursor
+                companionManager.annotationArtistID = nil
+            }
+        }
+        do {
+            while true {
+                try Task.checkCancellation()
+                guard companionManager.visualAnnotation?.id == identity else { return }
+                let elapsed = min(duration, ProcessInfo.processInfo.systemUptime - started)
+                annotationElapsed = elapsed
+                if draws {
+                    if elapsed < VisualAnnotationMotion.approach {
+                        cursorPosition = VisualAnnotationMotion.curve(from: source, to: first,
+                            progress: elapsed / VisualAnnotationMotion.approach)
+                    } else if elapsed < VisualAnnotationMotion.drawingStart {
+                        cursorPosition = first
+                        let press = VisualAnnotationMotion.progress(elapsed, start: VisualAnnotationMotion.approach,
+                                                                     duration: VisualAnnotationMotion.press)
+                        notchClickScale = 1 - 0.08 * sin(press * .pi)
+                    } else if elapsed <= VisualAnnotationMotion.drawingEnd {
+                        notchClickScale = 1
+                        cursorPosition = VisualAnnotationMotion.cursorCenter(tip: drawing.tip(
+                            progress: VisualAnnotationMotion.inkProgress(elapsed, reducedMotion: false)))
+                    } else if elapsed < VisualAnnotationMotion.drawingEnd + VisualAnnotationMotion.release {
+                        cursorPosition = last
+                    } else {
+                        if returnDestination == nil {
+                            let pointer = convertScreenPointToSwiftUICoordinates(NSEvent.mouseLocation)
+                            returnDestination = CGPoint(x: pointer.x + 35, y: pointer.y + 25)
+                        }
+                        cursorPosition = VisualAnnotationMotion.curve(from: last, to: returnDestination ?? last,
+                            progress: VisualAnnotationMotion.progress(elapsed,
+                                start: VisualAnnotationMotion.drawingEnd + VisualAnnotationMotion.release,
+                                duration: VisualAnnotationMotion.departure))
+                    }
+                }
+                if elapsed >= duration { break }
+                try await Task.sleep(for: .milliseconds(16))
+            }
+            buddyNavigationMode = .followingCursor
+            companionManager.annotationArtistID = nil
+            // Same short-lived indication semantics as the original pointer bubble.
+            // Retirement is not evidence that the user completed an action.
+            try await Task.sleep(for: .seconds(4))
+            try Task.checkCancellation()
+            guard companionManager.visualAnnotation?.id == identity else { return }
+            withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.28)) { annotationOpacity = 0 }
+            try await Task.sleep(for: .seconds(reduceMotion ? 0.15 : 0.28))
+            try Task.checkCancellation()
+            guard companionManager.visualAnnotation?.id == identity else { return }
+            companionManager.clearDetectedElementLocation()
+        } catch { return }
     }
 
     /// Animates the buddy along a quadratic bezier arc from its current position

@@ -5,7 +5,7 @@
 
 ## Overview
 
-macOS menu bar companion app. Lives entirely in the macOS status bar (no dock icon, no main window). Clicking the menu bar icon opens a native translucent floating panel with companion voice controls and a persistent Spanish/English preference. Uses OpenAI Realtime push-to-talk (ctrl+option), with explicit screen-sharing consent. A glass cursor points at validated controls. Text fallback uses VisionAPI through the Worker; its separate legacy audio providers remain available. The ct010 /vision Worker is deployed and smoke-verified; the user accepted the native result and tsk002 is completed.
+macOS menu bar companion app. Lives in the macOS status bar (no dock icon, no main window). Clicking the status icon opens the official notch-integrated Home, shared with camera hover, chats and settings. The legacy companion popup is no longer instantiated. Uses OpenAI Realtime push-to-talk (ctrl+option), with explicit screen-sharing consent. A glass cursor points at validated controls. Text fallback uses VisionAPI through the Worker; its separate legacy audio providers remain available. The ct010 /vision Worker is deployed and smoke-verified; the user accepted the native result and tsk002 is completed.
 
 All API keys live on a Cloudflare Worker proxy — nothing sensitive ships in the app.
 
@@ -41,10 +41,12 @@ Worker vars: `ELEVENLABS_VOICE_ID`
 
 ### Key Architecture Decisions
 
-**Menu Bar Panel Pattern**: The companion panel uses `NSStatusItem` for the menu bar icon and a custom borderless `NSPanel` for the floating control panel. This gives full control over appearance (dark, rounded corners, custom shadow) and avoids the standard macOS menu/popover chrome. The panel is non-activating so it doesn't steal focus. A global event monitor auto-dismisses it on outside clicks.
+**Menu Bar Entry**: `NSStatusItem` routes directly to the single HomePanelController.
+Click opens hidden Home, expands the listening island or closes expanded/detached
+Home. CompanionPanelView remains unreachable legacy source, not a fallback UI.
 
-**Home Prototype (tsk007 F1)**: Hovering the real camera housing (180 ms dwell),
-or the menu's explicit “Probar Home · Beta” action, opens one reusable non-key/non-main
+**Official Home (tsk007)**: Hovering the real camera housing (180 ms dwell),
+or clicking the status icon, opens one reusable nonactivating/non-main
 HomePanelController panel. MenuBarPanelManager starts passive pointer monitors at
 initialization; the actual panel is still created only on demand. Compact/expanded
 surface now covers the physical camera region with solid black, derived from safeAreaInsets and
@@ -53,8 +55,18 @@ gap; detached mode is draggable and reattaches to its current display.
 HomeView projects the existing manager/session without owning audio, capture or model calls.
 HomeChatLibrary retains up to 20 memory-only text snapshots; selecting cancels the
 current turn and restores with a fresh session ID, without captures or active work.
-No composer or durable history yet (tsk008). The settings button replaces sidebar
-navigation with General/Cursor/Privacy, using existing manager setters.
+HomeComposer adds text streaming through VisionAPI without automatic screen/audio,
+per-chat drafts, Enter/Shift+Enter and stop. Durable history remains tsk008.
+Settings includes General/Voice/Microphone/Shortcuts/Cursor/Privacy/Help.
+General has no manual conversation-objective field: intent comes from the request
+and bounded conversation context, not another user configuration step.
+Privacy includes the existing OS permission actions and first-run Start. Help
+contains introduction replay, feedback mail and Quit. Opening does not request
+permissions or change consent. Pending setup routes to Privacy and prevents
+autohide. Home stays non-main/passive on hover; CursyEditingPanel becomes key only
+for explicit text/shortcut editing. Closing/compacting releases editing ownership.
+PTT must not emit the old panel-dismiss signal, which would suppress automatic
+island presentation; onboarding still uses it to dismiss Home.
 Sidebar/settings extend to the bottom of the same HomeGlassSurface; do not add
 independent opaque backgrounds or an outside bottom padding strip. UI pictograms
 and modifier keys use SF Symbols; the live cursor retains its custom identity.
@@ -65,7 +77,7 @@ slide/fade (reduced-motion fade150 ms). Keep its retained exit separate from the
 immediate input trail and audio lifecycle; no animation may delay capture.
 Escape is observed without consuming it. Attached Home hides
 800 ms after leaving while idle; pointer inside, voice activity, dragging and
-VoiceOver prevent auto-hide. Detached stays visible. Explicit X/Escape suppresses
+VoiceOver and incomplete setup prevent auto-hide. Detached stays visible. Explicit X/Escape suppresses
 hover until the pointer leaves; re-entry reverses an automatic close. No polling,
 new persistence. Voice automatically shows a hidden Home as a compact island;
 explicit dismissal suppresses it for that turn, detached stays independent.
@@ -75,8 +87,9 @@ acknowledges an activation UUID before the listening island reveals. It hides
 above the camera while listening/processing, then exits toward
 a validated target or resumes following. No physical pointer or audio changes.
 Navigation revisions invalidate old bubble/return callbacks. User design
-and physical focus/accessibility gates are in scripts/SETTINGS_QA.md. Only sidebar,
-existing settings and color selection are authorized F2 work so far.
+and physical focus/accessibility gates are in scripts/SETTINGS_QA.md. Home promotion
+and all legacy-control migration are authorized. F3 is integrated, with physical
+focus, devices, provider behavior and compatibility acceptance still pending.
 Five CursyCursorTint choices tint native glass and matching shadow; preference
 persists, unknown values fall back to mint, optical size remains unchanged.
 Listening feedback consumes currentAudioPowerLevel: stationary in silence,
@@ -98,6 +111,18 @@ overrides visible-frame constraints because layout already bounds each mode.
 
 **Cursor Overlay**: A full-screen transparent `NSPanel` hosts the glass cursor companion. It's non-activating, joins all Spaces, and never steals focus. The cursor position, response text, waveform, and pointing animations all render in this overlay via SwiftUI through `NSHostingView`.
 
+**Native indication design port (tsk005)**: One validated target per turn. Regions
+come only from the exact accessible element at the verified point (no ancestor
+container expansion); display/window/PID and complete window occlusion are checked.
+No verified extent means circle/rectangle fall back to cursor. Generic image/canvas
+regions still need a locator contract extension. VisualAnnotationMotion shares a
+1.6× monotonic drawing clock with the existing glass companion; no second cursor
+or physical input. Rectangle drag, ellipse/arrow trace, independent typed labels,
+shared tint and pointer-driven rim. Cancellation invalidates identity; a short
+hold/fade retires the indication without claiming success. No per-mark clear UI;
+session cancel, consent opt-out and hide remain. Multi-mark guides/verification
+remain tsk009/010. Reduced motion shows static geometry and full text with a fade.
+
 **Global Push-To-Talk Shortcut**: Background push-to-talk uses a listen-only `CGEvent` tap instead of an AppKit global monitor so modifier-based shortcuts like `ctrl + option` are detected more reliably while the app is running in the background.
 
 **Shared URLSession for AssemblyAI**: A single long-lived `URLSession` is shared across all AssemblyAI streaming sessions (owned by the provider, not the session). Creating and invalidating a URLSession per session corrupts the OS connection pool and causes "Socket is not connected" errors after a few rapid reconnections.
@@ -105,6 +130,43 @@ overrides visible-frame constraints because layout already bounds each mode.
 **Transient Cursor Mode**: When "Show Cursy" is off, pressing the hotkey fades in the cursor overlay for the duration of the interaction (recording → response → TTS → optional pointing), then fades it out automatically after 1 second of inactivity.
 
 ## Key Files
+
+Selected-text entry (tsk007): event/AX-notification-triggered bounded AX selected text/range only;
+no clipboard/OCR/full document or screenshots. Secure/unsupported selections omit
+the offer. Nearby exposed menu/group geometry informs above/below placement; this
+is not universal menu recognition. SelectedTextReader isolates synchronous AX IPC
+off MainActor, searches hit/focus ancestry and bounded structural children, and
+supports native ranges plus web text-marker ranges without app-name branches.
+SelectedTextSearch supplies the shared production/test traversal, capability
+warmup and read-generation lifecycle. Web-area ancestry is preferred; bounded
+DFS pages through siblings, and menu focus bursts do not cancel a gesture read.
+Preparation reads AXRole and requests writable AXManualAccessibility once per
+pending process, allowing the remote debounce before the final bounded retry.
+Retries remain bound to the original main window; secure inputs are excluded.
+Confirmed selected text lacking bounds may use a mouse placement anchor, never
+a guessed text extent. Late reads are revoked on input/app/session changes.
+The mouse-down/up band can reject stale AX placement coordinates but never
+supplies text. Menu placement waits140ms for selection UI to settle and probes
+compact accessible control groups within300ms; no app-specific menu labels.
+SelectionMenuSearch shares production/fixture logic: bounded horizontal strip
+sampling (40pt columns/16pt rows), single-action support and compact ancestor
+envelopes. It treats nearby accessible controls as obstacles, not semantic proof
+of a selection menu; unexposed menus remain an interoperability limitation.
+Offer/editor stack12pt above nearby menus (below selection if there is no room).
+Offer morphs to compact editor without glyph
+scaling. Explicit send/mic creates a fresh memory-only selected-text session; scope
+blocks screen/gesture input. Realtime output-only greeting completes playback before
+the existing PTT recorder starts. New turn/reset/cancel revokes callbacks. Local
+microphone test owns audio only while idle, stops on navigation/close/Talk, and
+never stores/sends audio. Its actor owns blocking graph operations; input readiness
+has a5s watchdog and teardown keeps ownership until complete. Talk during release
+requires explicit retry, not concurrent engines. Fresh engines retain the default
+route without HAL reassignment (also when that UID is selected explicitly).
+Stored UID is applied by both existing recorders; missing
+device requires explicit route choice. Shortcut recorder reuses global tap and
+rejects reserved combinations, but cannot detect all third-party conflicts.
+Neutral hairlines/shadows belong to UI/captions; cursor color belongs to icons and
+actual guidance figures. Do not restore decorative colored strokes everywhere.
 
 tsk006 first integration (not fully accepted): SpatialContextRecorder samples the
 pointer only during explicitly opted-in Talk, starting at input-ready. Its clean
@@ -145,8 +207,10 @@ new provider, OCR or paid evaluation. Extra image inference cost/latency is unme
 tsk005 adds point-centered visual annotations without changing localization:
 VisualAnnotation.swift holds style, bounded display layout and the click-through
 SwiftUI renderer. Circle/rectangle are focus markers, NOT element bounding boxes.
-Realtime accepts explicit style in its structured decision; automatic and legacy
-fallback use the menu preference (default Cursor). Validated publication alone
+Realtime chooses style contextually in its structured decision and honors explicit
+spoken requests. No user style selector or stored style preference is consumed;
+automatic/omitted decisions and legacy fallback use Cursor. Refresh retains the
+current indication style. Validated publication alone
 creates marks; invalidation/reset/opt-out clear them. No additional capture/timer,
 OCR or Worker deployment. Live acceptance: scripts/ANNOTATION_QA.md.
 
@@ -205,14 +269,23 @@ items. Dock pointing never launches applications or invokes AX actions.
 
 | File | Lines | Purpose |
 |------|-------|---------|
+| `HomeComposer.swift` | ~127 | Explicit-edit NSPanel/NSTextView bridge, per-chat draft/composer and submit/stop/voice controls. |
+| `HomeInputSettings.swift` | ~90 | Real mic/shortcut settings, recording/reset and dynamic shortcut hints. |
+| `HomeKeyboardShortcut.swift` | ~75 | Typed custom shortcut validation/transitions and local recorder sharing global tap. |
+| `HomeMicrophone.swift` | ~250 | Default-safe input UID routing, actor-owned local15s test, startup deadline and release ownership; no uploads. |
+| `SelectedTextContext.swift` | ~46 | Exact bounded selection scope and pure display/menu-safe placement. |
+| `SelectedTextPanelController.swift` | ~320 | Input/AX event observation, cancellable offer, morph, isolated chat/voice and notch notification. |
+| `SelectedTextReader.swift` | ~210 | Bounded off-main AX selection-only reader: native/web ranges, ancestry, menu geometry and content-free diagnostics. |
+| `SelectedTextSearch.swift` | ~105 | Shared bounded traversal backend, delayed AX warmup and cancellable gesture lifecycle. |
+| `SelectionMenuSearch.swift` | ~100 | Bounded menu geometry search, single-action/container support; shared with regression fixtures. |
 | `HomePresentation.swift` | ~80 | Pure Home activity/history projection and safe display geometry; independent presentation versus activity. |
-| `HomePanelController.swift` | ~395 | Single non-key panel, click-gated voice island, cancellable hover/reveal, shaped hit testing, Escape and display changes. |
+| `HomePanelController.swift` | ~420 | Single passive/explicit-edit Home, status toggle, setup-guarded hover/reveal, voice island and display changes. |
 | `HomeNotchInteraction.swift` | ~55 | Shared camera geometry, cubic arrival curve and activation/docking policy; no audio or target authority. |
 | `HomeHoverPolicy.swift` | ~23 | Pure pointer intent; detached, busy, dragging, VoiceOver and explicit-dismissal guards. |
 | `HomeSurfaceShape.swift` | ~78 | Opaque camera neck/shoulders and lateral island silhouettes, rounded fallback without notch. |
-| `HomeView.swift` | ~355 | ES/EN Home, chats/settings sidebar and camera-reserved voice controls; no new audio/model path. |
+| `HomeView.swift` | ~382 | ES/EN Home, chats/settings sidebar and camera-reserved voice controls; composer/context projection. |
 | `HomeChatLibrary.swift` | ~45 | Bounded memory-only chats, terminal text snapshots and independent selection. |
-| `HomeSettingsView.swift` | ~125 | General/Cursor/Privacy controls using real preferences, five-color swatch picker. |
+| `HomeSettingsView.swift` | ~228 | General/Voice/Microphone/Shortcuts/Cursor/Privacy/Help without manual objective, existing permission/onboarding/support actions and tint picker. |
 | `HomeSpatialHint.swift` | ~112 | Display-safe hint anchor, real-listening policy and reversible clipped notification; no audio ownership. |
 | `CursyCursorTint.swift` | ~30 | Typed tint palette, localized names and preference fallback. |
 | `HomeVoiceFeedback.swift` | ~80 | Bounded listening meter, voice bars and bottom glow; real input only, reduced-motion/transparency alternatives. |
@@ -227,18 +300,20 @@ items. Dock pointing never launches applications or invokes AX actions.
 | `scripts/benchmark-spatial-preparation.sh` | ~16 | Reuses isolated native regression module to run the benchmark without credentials/network. |
 | `SpatialTrailView.swift` | ~50 | Immediate click-through input trail, with separately animated camera-safe ES/EN hint. |
 | `scripts/SPATIAL_CONTEXT_QA.md` | ~80 | First-integration limits, offline evidence and pending physical/provider acceptance matrix. |
-| `VisualAnnotation.swift` | ~130 | Typed point-centered focus marks, display-safe label placement and native click-through rendering. |
+| `VisualAnnotation.swift` | ~100 | Typed verified-region presentation, no-extent cursor fallback, enclosing ellipse and display-safe caption geometry. |
+| `VisualAnnotationMotion.swift` | ~115 | Pure phase timing, curved approach, synchronized arc-length ink/tip samples and grapheme-safe caption progress. |
+| `VisualAnnotationView.swift` | ~100 | Click-through tint/glass marks, pointer reflection, stable typed captions and accessibility variants. |
 | `VisualTurnContext.swift` | ~245 | Immutable capture evidence, bounded semantic query and typed visual routing, pixel normalization and capture deadline. Preliminary generic window/coordinates are not semantic authority. |
 | `scripts/test-native-regressions.sh` | ~43 | Offline module compilation and isolated regression runner; excludes Sparkle entry, broad pre-existing app tests and UI suite. No xcodebuild or app launch. |
 | `scripts/VISUAL_INTENT_QA.md` | ~40 | General foreground/background, native, missing/ambiguous, two-monitor and interruption acceptance scenarios for tsk004. |
 | `VisualObservation.swift` | ~427 | Short cancellable visual lease, model-scoped luminance/geometry checks, two-refresh budget and silent target relocalization; no OCR or permanent observation. |
 | `RealtimeResponseGate.swift` | ~37 | Correlates response metadata/IDs and separates silent visual decisions from authorized spoken replies; rejects late audio/transcripts. |
 | `CursyApp.swift` | ~89 | Menu bar app entry point. Uses `@NSApplicationDelegateAdaptor` with `CompanionAppDelegate` which creates `MenuBarPanelManager` and starts `CompanionManager`. No main window — the app lives entirely in the status bar. |
-| `CompanionManager.swift` | ~1530 | Central state machine. Coordinates dictation, shortcut monitoring, screen capture, spatial-input recorder, provider-neutral vision fallback, ElevenLabs TTS and overlay. Tracks voice/session ownership and bounded observation; spatial policy/state live in the recorder. |
-| `MenuBarPanelManager.swift` | ~243 | NSStatusItem + custom NSPanel lifecycle. Creates the menu bar icon, manages the floating companion panel (show/hide/position), installs click-outside-to-dismiss monitor. |
-| `CompanionPanelView.swift` | ~430 | Native SwiftUI menu-bar content on AppKit vibrancy. Shows status, push-to-talk instructions, language/model pickers, permissions, feedback, replay, and quit actions using semantic colors, SF typography, and SF Symbols. |
+| `CompanionManager.swift` | ~1710 | Central state machine. Coordinates dictation, shortcut monitoring, screen capture, spatial-input recorder, provider-neutral vision fallback, ElevenLabs TTS and overlay. Tracks voice/session ownership and bounded observation; spatial policy/state live in the recorder. |
+| `MenuBarPanelManager.swift` | ~48 | NSStatusItem routes to one official Home; first-run opening and onboarding dismissal, no legacy panel creation. |
+| `CompanionPanelView.swift` | ~430 | Unreachable legacy view retained as source; all controls now live in Home/settings. Do not restore as a second UI. |
 | `CursyLanguage.swift` | ~60 | Spanish/English preference model, locale metadata, and provider-specific response-language instructions. |
-| `OverlayWindow.swift` | ~900 | Full-screen transparent overlay hosting the glass cursor, response text, audio-reactive listening and breathing processing states. Coordinates cursor presentation state, element pointing with bezier arcs, multi-monitor mapping, and fade-out transitions. |
+| `OverlayWindow.swift` | ~1060 | Full-screen transparent overlay hosting the glass cursor, response text, audio-reactive voice states and cancellable companion-authored annotation choreography. Shared single-artist display ownership, multi-monitor mapping and fade-out transitions. |
 | `CursyCursorShape.swift` | ~690 | Arrow/comet-to-circle geometry, bounded audio-reactive pulse rings, presentation springs, native glass, accessibility variants, and interactive DEBUG preview with simulated voice. |
 | `CompanionResponseOverlay.swift` | ~217 | SwiftUI view for the response text bubble and waveform displayed next to the cursor in the overlay. |
 | `CompanionScreenCaptureUtility.swift` | ~268 | Multi-monitor screenshot capture using ScreenCaptureKit. Captures the cursor display with image dimensions, window metadata and torn-snapshot checks; supports quiet local observation samples. |
@@ -261,7 +336,7 @@ items. Dock pointing never launches applications or invokes AX actions.
 | `RealtimeInputDelivery.swift` | ~90 | Pure bounded preconnection PCM delivery and once-only release/finish policy; content-free monotonic phase trace. |
 | `scripts/VOICE_LATENCY_QA.md` | ~90 | Offline versus physical latency evidence, numeric metric definitions, lifecycle/device/privacy checks and F3 routing gate. |
 | `ElevenLabsTTSClient.swift` | ~81 | ElevenLabs TTS client. Sends text to the Worker proxy, plays back audio via `AVAudioPlayer`. Exposes `isPlaying` for transient cursor scheduling. |
-| `ElementLocationDetector.swift` | ~120 | Shared read-only AX grounding, validated coordinates and provider-neutral vision localization. |
+| `ElementLocationDetector.swift` | ~436 | Read-only AX/window grounding, verified accessible annotation extents, validated coordinates and provider-neutral vision localization. |
 | `DesignSystem.swift` | ~880 | Design system tokens — colors, corner radii, shared styles. All UI references `DS.Colors`, `DS.CornerRadius`, etc. |
 | `CursyAnalytics.swift` | ~28 | No-op analytics interface reserved for a future privacy-reviewed integration. |
 | `WindowPositionManager.swift` | ~262 | Window placement logic, Screen Recording permission flow, and accessibility permission helpers. |

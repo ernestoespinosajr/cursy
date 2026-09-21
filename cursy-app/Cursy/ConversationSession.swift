@@ -60,6 +60,7 @@ struct ConversationSession: Sendable {
     static let objectiveLimit = 2000
     private(set) var id = ConversationSessionID()
     private(set) var objective: String?
+    private(set) var selectedText: SelectedTextContext?
     private(set) var currentTurn: ConversationTurn?
     private(set) var exchanges: [ConversationExchange] = []
     // A user's request remains relevant even when they interrupt the spoken answer.
@@ -83,6 +84,11 @@ struct ConversationSession: Sendable {
     mutating func setExplicitObjective(_ objective: String?) {
         let trimmed = objective?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.objective = trimmed?.isEmpty == false ? trimmed.map { String($0.prefix(Self.objectiveLimit)) } : nil
+    }
+
+    mutating func useSelection(_ selection: SelectedTextContext) {
+        reset()
+        selectedText = selection
     }
 
     @discardableResult

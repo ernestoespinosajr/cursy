@@ -49,10 +49,8 @@ final class CompanionManager: ObservableObject {
     /// BlueCursorView uses this instead of a random pointer phrase.
     @Published var detectedElementBubbleText: String?
     @Published private(set) var visualAnnotation: VisualAnnotation?
-    @Published var preferredAnnotationStyle: VisualAnnotationStyle =
-        VisualAnnotationStyle(rawValue: UserDefaults.standard.string(forKey: "visualAnnotationStyle") ?? "cursor") ?? .cursor {
-        didSet { UserDefaults.standard.set(preferredAnnotationStyle.rawValue, forKey: "visualAnnotationStyle") }
-    }
+    /// Presentation ownership across displays; never moves the physical pointer.
+    @Published var annotationArtistID: UUID?
     private var observationAnnotationStyle: VisualAnnotationStyle?
 
     // MARK: - Onboarding Video State (shared across all screen overlays)
@@ -76,6 +74,8 @@ final class CompanionManager: ObservableObject {
     private var onboardingMusicFadeTimer: Timer?
 
     let buddyDictationManager = BuddyDictationManager()
+    let homeMicrophone = HomeMicrophone()
+    let homeShortcutRecorder = HomeShortcutRecorder()
     let globalPushToTalkShortcutMonitor = GlobalPushToTalkShortcutMonitor()
     let overlayWindowManager = OverlayWindowManager()
     // Response text is now displayed inline on the cursor overlay via
@@ -104,6 +104,16 @@ final class CompanionManager: ObservableObject {
         didSet { chatLibrary.updateCurrent(conversationSession) }
     }
     @Published private(set) var conversationNotice: String?
+    @Published var homeDrafts: [UUID: String] = [:]
+    @Published private(set) var isSelectionGreeting = false
+    private var isTextResponse = false
+    private var isReadingText = false
+    var isSelectionVoiceInteraction: Bool {
+        conversationSession.selectedText != nil && voiceState != .idle && !isTextResponse && !isReadingText
+    }
+    @Published var readTextRepliesAloud = UserDefaults.standard.bool(forKey: "readTextRepliesAloud") {
+        didSet { UserDefaults.standard.set(readTextRepliesAloud, forKey: "readTextRepliesAloud") }
+    }
     private var realtimeTurnID: ConversationTurnID?
     private var visualObservation: VisualObservation?
     lazy var spatialContextRecorder = SpatialContextRecorder(allowed: { [weak self] in
@@ -223,6 +233,11 @@ final class CompanionManager: ObservableObject {
     }
 
     private func stopAndResetConversation() {
+        homeShortcutRecorder.stop()
+        homeMicrophone.stop()
+        isSelectionGreeting = false
+        isTextResponse = false
+        isReadingText = false
         spatialContextRecorder.cancel()
         realtimeStartTask?.cancel()
         pendingKeyboardShortcutStartTask?.cancel()
@@ -243,6 +258,111 @@ final class CompanionManager: ObservableObject {
         scheduleTransientHideIfNeeded()
     }
 
+    func cancelCurrentInteraction() {
+        let snapshot = conversationSession.resumableSnapshot()
+        stopAndResetConversation()
+        conversationSession = snapshot
+    }
+
+    @discardableResult
+    func beginSelectedText(_ selection: SelectedTextContext) -> Bool {
+        guard chatLibrary.canCreate else {
+            conversationNotice = preferredLanguage == .spanish ? "Límite de 20 chats temporales." : "Limit of 20 temporary chats."
+            return false
+        }
+        startNewConversation()
+        conversationSession.useSelection(selection)
+        return true
+    }
+
+    /// Text submissions never capture the screen or start a microphone implicitly.
+    @discardableResult
+    func sendHomeText(_ text: String) -> Bool {
+        let request = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !request.isEmpty else { return false }
+        guard request.utf16.count <= ConversationSession.textLimit else {
+            conversationNotice = preferredLanguage == .spanish ? "Acorta el mensaje a 8.000 caracteres." : "Shorten the message to 8,000 characters."
+            return false
+        }
+        cancelCurrentInteraction()
+        let turnID = conversationSession.beginTurn()
+        conversationSession.setTranscript(request, for: turnID)
+        conversationSession.transition(to: .processing, for: turnID)
+        let selection = conversationSession.selectedText
+        let history = conversationSession.exchanges.map { (userPlaceholder: $0.userTranscript, assistantResponse: $0.assistantResponse) }
+        let language = preferredLanguage
+        let readAloud = readTextRepliesAloud
+        isTextResponse = true
+        voiceState = .processing
+        currentResponseTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let instructions = "You are Cursy. Answer the user's question clearly and concisely. No screenshot or computer tools are available. Never claim to see the screen or perform actions.\n"
+                    + language.legacyPromptInstruction + "\n" + (selection == nil ? "" : SelectedTextContext.instructions)
+                let prompt = selection.map { $0.sourceMessage + "\n\nUser question:\n" + request } ?? request
+                let result = try await self.visionAPI.analyzeImageStreaming(images: [], systemPrompt: instructions,
+                    conversationHistory: history, userPrompt: prompt, onTextChunk: { [weak self] content in
+                        guard let self, self.conversationSession.isActive(turnID) else { return }
+                        self.conversationSession.setResponse(content, for: turnID)
+                        self.conversationSession.transition(to: .responding, for: turnID)
+                    })
+                try Task.checkCancellation()
+                guard self.conversationSession.isActive(turnID) else { return }
+                self.conversationSession.setResponse(result.text, for: turnID)
+                if readAloud, let client = self.realtimeVoiceClient {
+                    self.realtimeTurnID = turnID
+                    self.isReadingText = true
+                    self.isUsingRealtimeVoice = true
+                    try await client.speakText(result.text, language: language)
+                } else {
+                    self.conversationSession.completeTurn(turnID)
+                    self.voiceState = .idle
+                }
+                self.isTextResponse = false
+            } catch {
+                guard !Task.isCancelled, self.conversationSession.isActive(turnID) else { return }
+                self.conversationSession.failTurn(turnID)
+                self.isTextResponse = false
+                self.isReadingText = false
+                self.isUsingRealtimeVoice = false
+                self.voiceState = .idle
+                self.conversationNotice = language == .spanish ? "No se pudo completar. Tu mensaje sigue en el chat; puedes volver a intentarlo." : "Couldn't complete. Your message remains in the chat; you can retry."
+            }
+        }
+        return true
+    }
+
+    func toggleHomeVoice() {
+        if isSelectionGreeting { cancelCurrentInteraction(); return }
+        if isPushToTalkPressed { handleShortcutTransition(.released) }
+        else { handleShortcutTransition(.pressed) }
+    }
+
+    func startSelectedTextVoice() {
+        guard conversationSession.selectedText != nil else { return }
+        cancelCurrentInteraction()
+        guard let client = realtimeVoiceClient else {
+            conversationNotice = preferredLanguage == .spanish ? "La voz no está disponible. Puedes escribir tu pregunta." : "Voice is unavailable. You can type your question."
+            return
+        }
+        let turnID = conversationSession.beginTurn()
+        conversationSession.transition(to: .processing, for: turnID)
+        realtimeTurnID = turnID
+        isSelectionGreeting = true
+        isUsingRealtimeVoice = true
+        voiceState = .connecting
+        let greeting = preferredLanguage == .spanish ? "Tengo el fragmento. ¿Qué te gustaría entender o cambiar?" : "I have the excerpt. What would you like to understand or change?"
+        realtimeStartTask = Task { [weak self] in
+            guard let self else { return }
+            do { try await client.speakText(greeting, language: self.preferredLanguage) }
+            catch {
+                guard !Task.isCancelled, self.conversationSession.isActive(turnID) else { return }
+                self.cancelCurrentInteraction()
+                self.conversationNotice = self.preferredLanguage == .spanish ? "No se pudo iniciar la voz. Inténtalo de nuevo o escribe tu pregunta." : "Couldn't start voice. Retry or type your question."
+            }
+        }
+    }
+
     /// User preference for whether the Cursy cursor should be shown.
     /// When toggled off, the overlay is hidden and push-to-talk is disabled.
     /// Persisted to UserDefaults so the choice survives app restarts.
@@ -261,6 +381,7 @@ final class CompanionManager: ObservableObject {
             overlayWindowManager.showOverlay(onScreens: NSScreen.screens, companionManager: self)
             isOverlayVisible = true
         } else {
+            clearDetectedElementLocation()
             overlayWindowManager.hideOverlay()
             isOverlayVisible = false
         }
@@ -274,6 +395,7 @@ final class CompanionManager: ObservableObject {
     }
 
     func start() {
+        homeMicrophone.observeDevices()
         refreshAllPermissions()
         print("🔑 Cursy start — accessibility: \(hasAccessibilityPermission), screen: \(hasScreenRecordingPermission), mic: \(hasMicrophonePermission), screenContent: \(hasScreenContentPermission), onboarded: \(hasCompletedOnboarding)")
         startPermissionPolling()
@@ -428,18 +550,22 @@ final class CompanionManager: ObservableObject {
                     ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == fresh.displayID
                 }), let point = ElementLocationDetector.resolve(target, context: fresh, currentFrame: screen.frame) else { return false }
                 self.publishValidatedIndication(point: point, context: fresh, label: target.label,
-                                                style: self.observationAnnotationStyle)
+                                                style: self.observationAnnotationStyle, target: target)
                 return true
             })
         visualObservation?.start()
     }
 
     private func publishValidatedIndication(point: CGPoint, context: VisualTurnContext,
-                                           label: String, style: VisualAnnotationStyle? = nil) {
-        let resolvedStyle = style ?? preferredAnnotationStyle
+                                           label: String, style: VisualAnnotationStyle? = nil,
+                                           target: PointingTarget? = nil) {
+        let resolvedStyle = VisualAnnotationStyle.resolve(agentChoice: style)
         observationAnnotationStyle = resolvedStyle
+        let region = resolvedStyle == .cursor ? nil : target.flatMap {
+            ElementLocationDetector.annotationRegion(for: $0, point: point, context: context)
+        }
         visualAnnotation = VisualAnnotation(style: resolvedStyle, point: point,
-                                            displayFrame: context.displayFrame, label: label)
+                                            displayFrame: context.displayFrame, label: label, region: region)
         detectedElementBubbleText = label
         detectedElementDisplayFrame = context.displayFrame
         detectedElementScreenLocation = point
@@ -455,9 +581,12 @@ final class CompanionManager: ObservableObject {
         detectedElementDisplayFrame = nil
         detectedElementBubbleText = nil
         visualAnnotation = nil
+        annotationArtistID = nil
     }
 
     func stop() {
+        homeShortcutRecorder.stop()
+        homeMicrophone.endObservation()
         spatialContextRecorder.cancel()
         clearDetectedElementLocation()
         conversationSession.reset()
@@ -616,7 +745,7 @@ final class CompanionManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isRecording, isFinalizing, isPreparing in
                 guard let self else { return }
-                guard !self.isUsingRealtimeVoice else { return }
+                guard !self.isUsingRealtimeVoice, !self.isTextResponse else { return }
                 // Don't override .responding — the AI response pipeline
                 // manages that state directly until streaming finishes.
                 guard self.voiceState != .responding else { return }
@@ -655,6 +784,17 @@ final class CompanionManager: ObservableObject {
     private func handleShortcutTransition(_ transition: BuddyPushToTalkShortcut.ShortcutTransition) {
         switch transition {
         case .pressed:
+            guard !homeMicrophone.ownsInput else {
+                homeMicrophone.stop()
+                conversationNotice = preferredLanguage == .spanish
+                    ? "Cerrando la prueba de micrófono. Vuelve a pulsar para hablar."
+                    : "Closing microphone test. Press again to talk."
+                return
+            }
+            homeMicrophone.stop()
+            isSelectionGreeting = false
+            isReadingText = false
+            isTextResponse = false
             guard !buddyDictationManager.isDictationInProgress, !isPushToTalkPressed else { return }
             // Don't register push-to-talk while the onboarding video is playing
             guard !showOnboardingVideo else { return }
@@ -671,8 +811,8 @@ final class CompanionManager: ObservableObject {
                 isOverlayVisible = true
             }
 
-            // Dismiss the menu bar panel so it doesn't cover the screen
-            NotificationCenter.default.post(name: .cursyDismissPanel, object: nil)
+            // Home owns voice presentation. Explicit dismissal here would
+            // suppress the automatic listening island for this turn.
 
             // Cancel any in-progress response and TTS from a previous utterance
             currentResponseTask?.cancel()
@@ -740,7 +880,7 @@ final class CompanionManager: ObservableObject {
     }
 
     private func beginSpatialInputIfEnabled() {
-        guard isPushToTalkPressed, isSpatialContextEnabled, isVisualContextEnabled,
+        guard conversationSession.selectedText == nil, isPushToTalkPressed, isSpatialContextEnabled, isVisualContextEnabled,
               let owner = conversationSession.activeContext,
               spatialContextRecorder.owner != owner else { return }
         spatialContextRecorder.onCancelInput = { [weak self] in self?.cancelSpatialInputTurn() }
@@ -787,7 +927,7 @@ final class CompanionManager: ObservableObject {
             authorizationToken: internalAPIToken
         )
         client.captureVisualContext = { [weak self] in
-            guard let self, self.isVisualContextEnabled, let turnID = self.realtimeTurnID,
+            guard let self, self.conversationSession.selectedText == nil, self.isVisualContextEnabled, let turnID = self.realtimeTurnID,
                   self.conversationSession.isActive(turnID) else { return nil }
             self.visualContextNotice = nil
             do {
@@ -872,7 +1012,7 @@ final class CompanionManager: ObservableObject {
                     return point
                 }, publish: { refined, point in
                     self.publishValidatedIndication(point: point, context: context, label: refined.label,
-                                                    style: request.annotationStyle ?? self.observationAnnotationStyle)
+                                                    style: request.annotationStyle ?? self.observationAnnotationStyle, target: refined)
                     observation?.accepted(refined)
                     self.visualContextNotice = self.preferredLanguage == .spanish
                         ? "Destino verificado en \(context.displayName)." : "Target verified on \(context.displayName)."
@@ -911,7 +1051,7 @@ final class CompanionManager: ObservableObject {
                 return .rejected(.invalidNativeTarget)
             }
             self.publishValidatedIndication(point: point, context: context, label: target.label,
-                                            style: target.annotationStyle ?? self.observationAnnotationStyle)
+                                            style: target.annotationStyle ?? self.observationAnnotationStyle, target: target)
             observation?.accepted(target)
             self.visualContextNotice = self.preferredLanguage == .spanish
                 ? "Destino verificado en \(context.displayName)."
@@ -943,6 +1083,7 @@ final class CompanionManager: ObservableObject {
         }
         client.onTranscriptCompleted = { [weak self] transcript in
             guard let self, let turnID = self.realtimeTurnID else { return }
+            guard !self.isReadingText else { return }
             // This callback is the ASSISTANT transcript, not the user's speech.
             self.conversationSession.appendResponse(transcript, for: turnID)
             print("🔊 OpenAI Realtime response completed (\(transcript.count) characters)")
@@ -961,6 +1102,9 @@ final class CompanionManager: ObservableObject {
         }
         client.onResponseCompleted = { [weak self] in
             guard let self else { return }
+            let shouldListen = self.isSelectionGreeting
+            self.isSelectionGreeting = false
+            self.isReadingText = false
             self.spatialContextRecorder.cancel()
             if let turnID = self.realtimeTurnID { self.conversationSession.completeTurn(turnID) }
             self.realtimeTurnID = nil
@@ -969,9 +1113,12 @@ final class CompanionManager: ObservableObject {
             self.realtimeVoiceClient?.cancel()
             self.visualObservation?.enableFollowUp()
             self.scheduleTransientHideIfNeeded()
+            if shouldListen { self.handleShortcutTransition(.pressed) }
         }
         client.onError = { [weak self] error in
             guard let self else { return }
+            self.isSelectionGreeting = false
+            self.isReadingText = false
             self.spatialContextRecorder.cancel()
             self.clearDetectedElementLocation()
             if let turnID = self.realtimeTurnID { self.conversationSession.failTurn(turnID) }
@@ -1004,7 +1151,8 @@ final class CompanionManager: ObservableObject {
             guard let self, !Task.isCancelled, self.conversationSession.isActive(context),
                   self.realtimeTurnID == context.turnID else { return }
             do {
-                try await client.startPushToTalk(language: language, historyItems: historyItems)
+                try await client.startPushToTalk(language: language, historyItems: historyItems,
+                    contextInstructions: self.conversationSession.selectedText == nil ? "" : SelectedTextContext.instructions)
                 guard !Task.isCancelled, self.conversationSession.isActive(context),
                       self.realtimeTurnID == context.turnID else { return }
 
@@ -1103,6 +1251,10 @@ final class CompanionManager: ObservableObject {
     /// the model's response may include a [POINT:x,y:label] tag which triggers
     /// the buddy to fly to that element on screen.
     private func sendTranscriptWithScreenshot(transcript: String) {
+        if conversationSession.selectedText != nil {
+            _ = sendHomeText(transcript)
+            return
+        }
         guard let turnID = conversationSession.activeTurnID else { return }
         conversationSession.transition(to: .processing, for: turnID)
         currentResponseTask?.cancel()
@@ -1189,7 +1341,7 @@ final class CompanionManager: ObservableObject {
                                }),
                                let location = ElementLocationDetector.resolve(target, context: visual, currentFrame: screen.frame) {
                                 voiceState = .idle
-                                publishValidatedIndication(point: location, context: visual, label: target.label)
+                                publishValidatedIndication(point: location, context: visual, label: target.label, target: target)
                                 observation?.accepted(target)
                                 didPointAtValidatedTarget = true
                             }

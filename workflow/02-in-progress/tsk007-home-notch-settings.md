@@ -1,7 +1,11 @@
-# tsk007 — Home opcional, notch y ajustes nativos
+# tsk007 — Home oficial, notch y ajustes nativos
 
-Status: in-progress — F1 nativo y subconjunto F2 autorizado (sidebar/ajustes/color)
-Current gate (2026-09-20): port nativo de revisión 3 autorizado e implementado; aceptación física conjunta con tsk017 pendiente. Resto de F2/F3 permanece fuera de esta entrega.
+Status: in-progress — Home oficial y migración del menú anterior implementados; F2/F3/F4 restantes abiertos
+Current gate (2026-09-21): port nativo de texto/micrófono/atajos/selección autorizado e integrado; QA física de foco, dispositivos, proveedores y compatibilidad AX pendiente. No cierra F4 ni tsk009/010.
+Feedback (2026-09-21): el usuario acepta las animaciones («está como queríamos»).
+Aceptación estética registrada; no implica cierre de ajustes/texto, matriz de
+accesibilidad/monitores o tsk017. Solicita retirar la elección manual de indicación
+visual: eliminada en prototipo, Home y menú anterior; preferencias antiguas ignoradas.
 Date: 2026-09-19
 Type: feature (11 layers)
 Complexity: 8/10
@@ -9,6 +13,334 @@ Priority: P1 — segunda entrega
 Dependencies: contratos implementados de tsk006; evaluación amplia de tsk006 sigue separada
 Owner: cce-mobile; write-swift, apple-design; animate para transiciones
 Context: ct017, ct012, ct001; contrato común del programa en ct012, sección «Tickets formalizados».
+
+## Revisión de prototipo F3 — 2026-09-21
+
+### Menús desplazados y de una acción — 2026-09-21
+
+- QA usuario: colocación correcta en GPT, oferta lateral en Claude y superpuesta
+  al menú de una acción en Outlook. Solicita corregir sin reglas por aplicación.
+- SelectedTextReader sustituye las tres columnas por SelectionMenuSearch, un
+  detector compartido con fixtures: barrido horizontal con separación máxima40pt
+  y alturas separadas16pt, acotado a ventana/franja,512 probes y300ms off-main.
+  Antes de terminar recorre ancestros para obtener el contenedor compacto entero,
+  no solamente el botón interceptado. Una acción basta; admite wrappers y roles
+  Toolbar/Menu/Popover/Group/Unknown, sin leer etiquetas ni nombres de apps.
+- No cambia selección/contexto, permisos, audio, diseño ni separación12pt. Campos
+  protegidos y texto estático no califican como controles. Cancelación, ciclos,
+  cantidad de nodos y spans patológicos están acotados. Sin OCR ni screenshots.
+  Geometría de controles cercanos es una heurística conservadora de obstáculos,
+  no prueba semántica de que cualquier control sea un menú; no soporte universal.
+- SelectionMenuSearchTests ejecuta el detector de producción, no solo layout:
+  geometría de captura Claude, acción única Outlook, wrappers con hit al contenedor,
+  texto/protegidos, cobertura de franja, cancelación y display negativo. Ejemplos
+  solo como fixtures, nunca como condiciones de runtime.
+- Primera ejecución completa232 pruebas/27 suites pasa en
+  `/private/tmp/cursy-native-regression.zkfcCp`. La consulta a Xcode agotó el tiempo
+  antes de enviar Build/Run; no se confirma una nueva app ejecutándose. Pendiente
+  Run desde Xcode y QA física de colocación en ambas aplicaciones.
+- Validación final232/27 pasa en `/private/tmp/cursy-native-regression.GQj9O1`,
+  incluyendo hit directo al contenedor con wrappers; diff-check limpio también
+  para los nuevos archivos. Sin commit/push ni modificaciones de la app anfitriona.
+
+### Ajuste de colocación tras QA visual del usuario — 2026-09-21
+
+- Usuario confirma que aparece la oferta; tres capturas muestran barra sobre
+  texto, dentro de selección y superpuesta al menú propio. No equivalen a una
+  matriz completa de apps/versiones ni atribuyen cada captura a una app distinta.
+- Corrección nativa: conservar inicio/fin del gesto (solo memoria y geometría),
+  invalidarlo con entrada/scroll/cambio de app; contrastar rango AX con su banda
+  vertical. Una geometría lejana/obsoleta o fallback4×4 usa el arrastre únicamente
+  como banda de exclusión para colocación, nunca para inferir texto o contexto.
+- Espera cancelable140ms para que rango/menú se estabilicen antes de mostrar.
+  Detección AX del menú amplía tres puntos a varias alturas/columnas; admite
+  Toolbar/Menu y contenedores compactos con dos controles accionables, incluidos
+  wrappers. Presupuesto300ms, sin OCR, screenshots, lectura de títulos/contenido,
+  nombres de apps ni permisos nuevos. Menús que no expongan AX siguen siendo límite.
+- Layout ancla horizontal al menú cercano,12pt de separación por encima; si no
+  cabe usa debajo de selección/menú. Misma política para oferta160×32 e input370×46.
+  Respeta bordes/pantallas con origen negativo y descarta geometría no finita.
+  Diseño, tintes, morph y motores de voz sin cambios. Apple Design guía separación
+  de capas y relación espacial con selección/menú, no nuevas animaciones.
+- Seis regresiones nuevas: rangos obsoletos, arrastre inverso/multilínea, rango
+  válido/gesto ajeno, menú desplazado/solapado, límite de pantalla y toolbar ajena.
+  Runner offline:225 pruebas/26 suites pasan en
+  `/private/tmp/cursy-native-regression.rgiqaY`; diff-check limpio, sin warnings
+  nuevos de selección en módulo offline. UI Xcode registra Build16:18; detalle
+  quedó en build anterior y posteriores controles vencieron por timeout. No se
+  confirma Run actualizado ni colocación física corregida; requiere Cmd+R/QA.
+
+### Corrección autorizada de selección con menús — 2026-09-21
+
+Usuario: «vamos a resolver en esas apps». Se implementa sobre este ticket, sin
+reglas por nombre de aplicación y sin modificar el diseño compacto aprobado.
+
+- SelectedTextReader prepara AXRole al activar una app y solicita la interfaz
+  manual solo cuando es escribible y no está activada. SelectionAccessibilityWarmup
+  recuerda solicitudes por PID para no reiniciar el debounce remoto; tres intentos
+  cancelables, el último después de2.3s si hubo activación pendiente. No espera2.3s
+  cuando la primera lectura funciona. No permiso nuevo ni flags forzados.
+- SelectionTreeSearch compartido por producción/tests: prioriza área web de
+  hit/foco y rango completo;48 ancestros, DFS paginada32,512 nodos/40 niveles y
+  presupuesto800ms por intento, fuera de UI. No lee AXValue/documento completo.
+  Los límites siguen siendo deliberados; no garantía de compatibilidad universal.
+- Lectura vinculada a PID/ventana principal; revalida ventana antes de entregar.
+  Ancla mouse solo dentro de esa ventana y solo con texto AX confirmado; cambios
+  de ventana/app, entrada, scroll o voz revocan resultados. Campos seguros podados.
+- SelectionReadLifecycle agrupa ráfagas AX sin cancelar una lectura vigente por
+  foco a menú. Mouse-up/teclado tienen prioridad sobre sondeos AX previos; no hay
+  hide/recreación indiscriminada. Presupuesto de menú separado200ms. Sigue siendo
+  geometría de menús expuestos, no reconocimiento de cualquier menú dibujado.
+- Logs correlacionan generación/PID/intento, límites/timeout y fallos de ventana/
+  colocación; nunca incluyen texto, títulos o URL. Sin portapapeles, OCR ni copy.
+- Nueva suite SelectedTextSearchTests cubre búsqueda profunda, hermanos tardíos,
+  foco a menú, rango completo, bounds ausentes, ventana ajena, campos protegidos,
+  ciclos/límites, cancelación, warmup y prioridad de generaciones.
+- Primera validación:219 pruebas/26 suites pasan en
+  `/private/tmp/cursy-native-regression.m99QjG`; Xcode UI Build succeeded15:58,
+  Running Cursy15:59. Warnings preexistentes, no nuevos en archivos de selección.
+- CUA confirma texto seleccionado en Comet (documento local sintético) y Claude
+  (encabezado visible, sin envío), pero acciones en segundo plano no reproducen
+  con fiabilidad activación/evento global. No se confirma barra visible nativa en
+  esas pruebas. Se solicita selección manual. GPT/host requiere QA del usuario;
+  no se elude restricción de automatización. Un found=true en logs sin correlación
+  física de app no se presenta como aceptación de ninguna de las tres.
+- Gate de compatibilidad física permanece abierto; no cierre de tsk007.
+- Validación final tras prioridad de mouse-up y revalidación independiente:
+  219/26 pasan en `/private/tmp/cursy-native-regression.k8Vukz`, diff-check limpio.
+  Xcode UI nueva compilación registrada16:07 y Run posterior confirma Running
+  Cursy. El panel de detalle seguía mostrando el build exitoso15:58; no atribuir
+  ese timestamp al último build. No prueba manual recibida al cerrar esta pasada.
+
+### Investigación de selección con menús — 2026-09-21
+
+Solicitud actual: investigar fallos persistentes en Comet, GPT y Claude; barra
+compacta aceptada. Esta pasada es diagnóstico, no modifica ni recompila la app.
+
+Evidencia y alcance:
+
+- CUA nativo devuelve árbol de Comet y una selección no vacía. No se transcribe
+  el contenido al workflow. Prueba que existe una vía AX accesible en ese estado,
+  no que Cursy use la misma consulta ni que funcione sin inicialización por CUA.
+- Claude expone dos áreas web y una jerarquía profunda, con área web enfocada.
+  No se ha reproducido una selección con menú en Claude durante este diagnóstico.
+  No se envían mensajes, cambian permisos ni manipulan tareas ajenas.
+- GPT/host no se vuelve a intentar por la restricción previa de automatización;
+  no se usa shell/otra tecnología para sortearla.
+- `log show` filtrado exclusivamente a Cursy/SelectedText (15:35–15:36) registra
+  peticiones de interfaz accesible seguidas por `found=false`, y varios resultados
+  `candidates=48, selectedCandidates=0`. Los logs no identifican la app fuente ni
+  correlacionan generaciones: NO permiten asignar cada resultado a Comet/Claude.
+  Esos fallos son previos a presentación, no evidencia de z-order del menú.
+
+Hallazgos de código y fuentes primarias:
+
+1. SelectedTextReader:35–38 espera120ms tras activar AXManualAccessibility. El
+   código upstream de Electron llama enableScreenReaderCompleteModeAfterDelay y
+   aplica debounce2s; nuevas activaciones pueden reiniciar ese plazo. Nuestra
+   política no representa pendiente/readiness ni reintenta después de la activación.
+   Es una incompatibilidad confirmada con ese comportamiento upstream, no prueba
+   de la versión/runtime exacto instalado en cada app.
+   https://github.com/electron/electron/blob/main/shell/browser/mac/electron_application.mm
+2. Activación Manual es específica de capacidad Electron, no garantía Chromium.
+   Chromium también inicializa soporte al consultar AXRole de la aplicación;
+   nuestro lector no hace esa consulta de entrada. No resolver forzando flags
+   privados indiscriminadamente ni modificando permisos del sistema.
+   https://chromium.googlesource.com/chromium/src/+/refs/heads/main/chrome/browser/chrome_browser_application_mac.mm
+3. SelectedTextReader:113–199: máximo8 ancestros,48 nodos expandidos,5 niveles,
+   primeros16 hijos por nodo y650ms. No prioriza área web propietaria del gesto;
+   puede gastar el presupuesto en controles/contenedores. Los48 de logs son
+   compatibles con agotamiento, pero aún falta correlación exacta de la ruta.
+4. En foco/subárbol pasa pointerAnchor:nil. Si recupera texto pero no bounds,
+   descarta el resultado aun con gesto vigente. El contador selectedCandidates
+   cuenta solo AXSelectedText, no texto recuperado por rangos/markers; cero no
+   prueba ausencia de todos los tipos de texto seleccionado.
+5. SelectedTextPanelController:92–105 llama hide/cancela lectura por cada evento
+   AX de foco/selección antes de revalidar; un menú puede interrumpir una lectura
+   válida. Esto está demostrado como posibilidad por código, no aún como causa
+   específica de las tres apps. Falta distinguir cambio de foco y selección vacía.
+6. Detección de menú solo ocurre tras encontrar texto y comparte el presupuesto
+   de650ms. Tres probes geométricos no son detección universal de menús. Separar
+   este problema de lectura/foco antes de cambiar nivel de ventana.
+
+Corrección recomendada (no implementada en esta investigación):
+
+- Diagnóstico correlacionado por gesto: estado de activación, roles y ruta,
+  límites/timeout/cancelación, texto-presente, bounds-presentes, razón de no mostrar;
+  sin texto, títulos, URL ni documento completo.
+- Preparar interfaz AX al entrar a la app por capacidades; estado pendiente por
+  proceso, sin reactivar en cada evento. Leer readiness/reintentar de forma acotada
+  sin bloquear UI ni añadir2s a cada selección.
+- Vincular gesto al documento/área web y mantenerlo frente a cambios de foco del
+  menú dentro de la misma ventana. Búsqueda estructural priorizada, paginada y
+  acotada; contexto solo del rango seleccionado, no recorrido de contenido.
+- Separar evidencia de texto y colocación; ancla del gesto válida solo en la misma
+  ventana/app, caducidad e invalidaciones explícitas. No adivinar contexto.
+- Revalidar antes de retirar; invalidar inmediatamente nueva entrada, scroll,
+  cambio de app/ventana, cancelación o selección confirmada vacía. Evitar barra vieja.
+- Tests del lector/coordinador con backend AX simulado: árbol profundo, siblings,
+  inicialización diferida2s, foco a menú, bounds ausentes, cancelación y campo seguro;
+  luego matriz física Comet/Claude/GPT/manual y editor nativo de control. Los208
+  tests previos no cubrían este contrato y no prueban compatibilidad universal.
+
+### Barra compacta y compatibilidad de selección — seguimiento
+
+- Usuario confirma que la oferta funciona en otra app, pero sigue ausente en
+  GPT. No hay evidencia de un bloqueo de seguridad ni confirmación de su causa.
+- Oferta nativa pasa de204×44 a160×32 (96×32 en inglés), fuente12 y sin logo;
+  prototipo refleja160×32. Editor, contexto aislado y acciones se conservan.
+- Reader solicita `AXManualAccessibility=true` solo al proceso activo, con
+  permiso AX previo, atributo escribible y estado aún no activado. Espera120ms
+  cancelables únicamente cuando la activación tuvo éxito; IPC sigue fuera de UI.
+  Interfaz documentada: https://www.electronjs.org/docs/latest/tutorial/accessibility
+  No usa nombres de apps ni fuerza AXEnhancedUserInterface. No clipboard/OCR,
+  permisos nuevos, documento completo ni datos de contexto enviados en esta prueba.
+- Corregida pérdida del punto mouse-up cuando AX notificaba la selección después:
+  anclaje válido máximo1s, mismo PID, invalidado por nuevo input/scroll/cambio de app.
+  Esa ruta no inventa texto ni extents; requiere selección AX confirmada.
+- Cinco regresiones nuevas (capacidad/estado/error de activación y anclaje tardío).
+  `bash cursy-app/scripts/test-native-regressions.sh`:208/25 pasan en
+  `/private/tmp/cursy-native-regression.yAKfwI`; Node28/28; diff-check limpio.
+  Xcode UI Build succeeded15:09 (warnings existentes), Run confirmado.
+  Navegador: barra sin logo arriba del menú sintético y click abre input enfocado.
+- Caso físico GPT pendiente: la herramienta de automatización no permite operar
+  la app host. No se intenta eludir esa restricción ni afirmar soporte universal;
+  el usuario debe repetir selección en la nueva app ejecutándose.
+
+### Corrección de selección y prueba de micrófono — QA del usuario
+
+- Reporte: selección en ChatGPT no ofrece entrada contextual ANTES del bloqueo;
+  probar micrófono integrado congela la app. Son regresiones independientes.
+  Consola: AudioUnit -10877 (elemento inválido), CoreAudio1852797029 (`nope`).
+  No hay muestra del hang original; la sesión anterior terminó con SIGKILL.
+- Ruta de audio: un motor nuevo conserva el predeterminado sin asignar su HAL;
+  elegir explícitamente ese mismo dispositivo tampoco lo reasigna. Otros UID
+  usan AUAudioUnit, sin cambiar la entrada global de macOS. Legacy reconstruye
+  el motor para no conservar una ruta personalizada al volver al predeterminado.
+- Prueba local: grafo/tap/start/stop en actor separado, watchdog de entrada5s,
+  confirmación por muestras reales, cierre asíncrono con propiedad exclusiva.
+  PTT mientras cierra pide reintento, nunca abre un segundo capturador. Cancelar
+  permiso/inicio y callbacks tardíos están invalidados por identidad.
+- Selección: observador AX más eventos globales; búsqueda acotada desde hit/foco
+  y sus ancestros/subárbol, rangos nativos y text-marker ranges web. IPC de lectura
+  fuera de MainActor, timeout por llamada35ms y presupuesto650ms. App/turno/evento
+  nuevos descartan resultados tardíos. Solo atributos de selección/estructura;
+  no texto completo, portapapeles, OCR, capturas ni ramas por nombre de app.
+- Si hay texto confirmado y faltan bounds, el ratón aporta un ancla de colocación
+  de4pt, NO un supuesto rectángulo del texto; por teclado no se inventa geometría.
+  Menús expuestos siguen evitando superposición. Apps sin selección accesible o
+  campos protegidos no pueden prometer compatibilidad universal.
+- Diagnóstico registra presencia/cantidad de candidatos, nunca contenido.
+  Verificación física sigue abierta: herramienta no permite controlar el host
+  ChatGPT; intentos automatizados en TextEdit no verificaron aparición de oferta.
+  No se afirma corregido ese escenario en vivo ni prueba física de audio.
+- Validación:203 tests/25 suites pasan en
+  `/private/tmp/cursy-native-regression.veQZvJ`; rutas y ciclo de vida con capturador
+  simulado, geometría/alcance de selección y regresiones existentes. Las primeras
+  esperas fijas de40ms produjeron carreras en tests; reemplazadas por espera
+  acotada del estado real. No son pruebas de hardware. Xcode compila la app con
+  su aislamiento MainActor real; el contrato de captura exige actor y el lector
+  AX mantiene helpers explícitamente no aislados. No commit/push/deploy.
+- Revalidación final tras guard previo al permiso:203/25 pasan en
+  `/private/tmp/cursy-native-regression.tH2Xes`; diff check limpio. Xcode UI
+  Run final muestra `Cursy Running Cursy` y monitores instalados con eventos/AX
+  true. Se deja la app abierta; no se activó micrófono ni se envió contexto.
+
+### Port nativo autorizado y superficies neutras
+
+- Petición: retirar strokes decorativos de color y llevar los flujos aprobados a
+  la app. Se conservan colores en iconos/cursor/figuras, no en input, etiquetas,
+  foco de controles ni borde de muestras. Prototipo y caption nativo actualizados.
+- HomeComposer: foco explícito, Enter/Shift+Enter, IME, borradores por chat, stop,
+  respuesta progresiva con VisionAPI existente; texto nunca captura pantalla/audio.
+- SelectedTextPanelController: selección AX exacta y bounds tras mouse-up/teclado;
+  sin portapapeles, OCR, screenshot ni documento completo. Omite campos seguros,
+  ausencia de bounds y texto >6000 UTF16. Sondeo acotado de menús/toolbars/grupos
+  cercanos; arriba/abajo u ocultar, sin reglas por app. No detecta menús que no
+  expongan geometría accesible: compatibilidad real sigue como gate.
+- Oferta→editor370×46/radio12: morph250ms del material, contenido sin escala,
+  teclado directo/Reduce Motion sin viaje; Escape/cambio externo cancela.
+  Envío/mic crea chat nuevo con SelectedTextContext, sin historial previo/pantalla.
+- Voz: saludo output-only por Realtime actual; reproducción completada inicia
+  captura, no timer simulado. Notificación compacta bajo notch/retirada400ms.
+  Enviar voz con botón/PTT; ruta de selección no captura pantalla/gestos.
+- HomeMicrophone: UID CoreAudio aplicado a recorder Realtime/legacy; prueba local
+  máxima15s sin subir/grabar/reproducir audio. Desconectado requiere elegir entrada;
+  no fallback silencioso. Talk/cierre/navegación/cambio de ruta detienen la prueba.
+- Ajustes Voz (Marin/velocidad actuales, lectura opcional), Micrófono, Atajos
+  (grabador/presets/reset/reservados, liberación por tecla/modificador), aviso
+  de escucha opcional. No promete detectar todos los conflictos globales.
+- Validación intermedia:28 Node y191 Swift/24 suites; Xcode UI Build Succeeded13:01,
+  Run sin activar micrófono/proveedor. Últimos ajustes se vuelven a compilar.
+  Navegador confirma input neutro sobre menú simulado. La automatización nativa
+  no logró abrir Home/selección; no se afirma QA física del foco o morph.
+- Guías múltiples/avance visual/regiones genéricas siguen tsk009/010/tsk005.
+  No se trasladan controles de simulación a producción. Modelo/Worker sin cambios.
+- Validación final:191 Swift/24 suites en `/private/tmp/cursy-native-regression.nnGOSQ`,
+  28 Node; `git diff --check` limpio. Xcode UI Build Succeeded13:15 y Running Cursy
+  13:16. App dejada abierta para QA del usuario, sin enviar contenido ni activar
+  audio real. Reservas de compatibilidad/foco/dispositivos siguen abiertas.
+
+### Entrada desde selección — ampliación de diseño del mismo ticket
+
+- Morph solicitado botón→input: material compartido FLIP250ms ease-in-out,
+  texto saliente100ms/entrante150ms sin escala; foco inmediato. Teclado directo,
+  Reduce Motion fade; cerrar/reseleccionar elimina capas y animaciones. Si el
+  anclaje cambia de lado por obstáculos, fundido sin atravesar el menú.28 tests
+  Node; navegador verifica frame intermedio, campo final, Escape y teclado.
+
+- Refinamiento posterior del usuario: input en una línea370×46px/radio12px;
+  aviso340px (89px en escucha) con iconosSF y controles de simulación fuera.
+  Slot recortado bajo notch44/52px; movimiento/opacidad400ms ease simétricos,
+  apertura tras activación del notch, teclado sin viaje y Reduce Motion fade.
+  Cancelar quita interacción/semántica inmediatamente mientras anima la salida.
+- Menú externo simulado opcional: medir rectángulos ocupados, preferir12px encima
+  del menú, debajo del grupo si falta altura, ocultar si no hay espacio. Función
+  genérica sin reglas por app; no detección real de ventanas/menús ni IA añadida.
+  26 testsNode, sintaxis/diff y navegador (menú/no menú, input, saludo/escucha,
+  salida intermedia); contexto aislado conserva el fragmento completo.
+
+- Usuario solicita seleccionar texto → «Preguntarle a Cursy» → input contextual
+  con micrófono; en voz, Cursy inicia antes de escuchar. Solo prototipo autorizado.
+- `selection-model.js` conserva copia exacta e inmutable del fragmento y token de
+  saludo; `selection.js` conecta el documento de muestra con popover/input/Home
+  y notch. Cada entrada crea un chat nuevo sin historial previo ni pantalla.
+  Un borrador no enviado permanece borrador al elegir voz. `selection.css` usa
+  tintes/SF Symbols y entrada breve200ms; teclado inmediato/movimiento reducido.
+- Saludo como subtítulo explícitamente simulado, seguido a los3s por escucha
+  simulada; no micrófono ni síntesis. Terminar/Escape/cambio de modo invalida el
+  timer. Abrir el notch lleva al mismo chat con el fragmento visible. No TCC/AX,
+  captura global, red ni cambios en Swift; no automatización de otras apps.
+- 22 pruebas Node y sintaxis/diff limpias. Navegador verifica selección real,
+  input, envío a chat aislado, saludo/escucha, cancelación temprana y apertura
+  desde notch; consola sin errores. Corregido conflicto de flechas con picker.
+- Para implementar nativamente hará falta diseñar extracción AX acotada,
+  compatibilidad de apps, selección no disponible, foco/destino y finalización
+  real del audio antes de escuchar. No equivale a permiso para observar todo
+  el texto/pantalla ni a implementación de tsk009/010.
+
+- Petición: continuar texto, selección/prueba de micrófono y ajustes restantes
+  primero como prototipo. CCE Frontend + Emil Design Engineering; sin tocar Swift.
+- Se amplía `prototypes/notch-voice/` con `home-input-model.js`,
+  `home-input-model.test.cjs`, `home-input.js` y `home-input.css`; integración en
+  index.html/workspace.js y documentación en README. Reutiliza notch, tintes,
+  símbolos SF y sidebar aceptados; no nuevas animaciones ni dependencias.
+- Compositor con Enter/Shift+Enter, borradores por chat en memoria, escape de
+  contenido/títulos, respuesta de ejemplo y cancelación por revisión/token.
+  No objetivo manual, selección de herramienta ni captura adjunta al escribir.
+- Ajustes Voz/Micrófono/Atajos con lectura automática de muestra, dispositivos
+  ficticios, medidor controlable, estados sin permiso/desconectado y captura de
+  atajo con Escape/restablecer. La prueba cesa al salir/cambiar dispositivo/voz.
+  Voz/velocidad no se ofrecen como selectores sin capacidad del proveedor.
+- Privacidad y Ayuda mantienen el gradiente compartido. Todo es simulación
+  explícita: sin getUserMedia, permisos, red, persistencia ni atajos del sistema.
+- Validación: 17 pruebas Node (4 nuevas de estado +13 geometría/movimiento),
+  sintaxis y diff limpios; navegador verifica respuesta, borradores multilínea,
+  chat nuevo, prueba y fallos de micrófono, captura/cancelación/reset de atajo,
+  toggle de voz y layout. Sin errores de consola observados.
+- Pendiente: aceptación de diseño; implementación nativa del compositor con foco
+  explícito y contexto de destino, coordinador de audio, dispositivos reales,
+  permisos y conflictos de atajo. No se cierra tsk007 ni se afirma QA nativa.
 
 Plan refinado e inicio autorizado el 2026-09-19 («incorpora y vamos a comenzar»). Se mantiene el mismo ticket. Archivos Swift bajo cursy-app/Cursy/, backend bajo cursy-app/worker/src/. Presupuestos son objetivos iniciales a medir, no resultados. Conservar macOS14.2, idioma Swift actual y cambios del usuario; no migrar toolchain en este ticket.
 
@@ -121,6 +453,53 @@ pruebas del flujo existente. Precisión de modelos queda fuera de este increment
 Validación común: Swift Testing para contratos; Xcode para UI/build completo, nunca xcodebuild por terminal. Aplicar regresiones de sesiones/visualización y Worker cuando se toquen sus rutas. Pruebas reales con pantallas/datos privados requieren autorización específica. Despliegue, cuentas y compras no autorizados por este plan. Registrar evidencia por fase; no cerrar antes de sus gates.
 
 Dispatch: `$cce-dispatch execute tsk007-home-notch-settings`
+
+## Promoción a Home oficial — 2026-09-21
+
+Refinamiento posterior del usuario: no desea introducir un objetivo manual.
+Retirados el campo de General y del código legacy, buffer y callbacks de edición.
+Home vuelve a ser non-key/non-main; se conserva la protección de setup/autohide.
+La intención se interpreta desde petición e historial acotado existentes; no se
+añade extracción remota extra, persistencia inferida ni autorización implícita.
+Los contratos internos opcionales de objetivo se conservan por compatibilidad,
+sin borrar sesiones. Esto sustituye el editor descrito en el registro histórico
+de promoción de abajo. Validación: 184 pruebas/22 suites pasan en
+`/private/tmp/cursy-native-regression.3fiQqA`; Xcode UI Build Succeeded11:21 y
+`git diff --check` limpio. Sin ejecución de la app ni inferencia remota de prueba.
+
+Esta decisión explícita sustituye las referencias históricas a Home opcional,
+entrada «Probar Home · Beta», rollback de menú y panel exclusivamente no-key.
+No declara terminadas las fases restantes del ticket.
+
+- MenuBarPanelManager conserva únicamente status item y un HomePanelController:
+  clic abre/expande/cierra Home; inicio con configuración pendiente abre Privacidad.
+  CompanionPanelView queda sin instanciar, sin ruta de acceso ni fallback de ajustes.
+- General incorpora objetivo temporal del chat con buffer de edición separado
+  del valor normalizado y límite de 2.000 caracteres. Nueva conversación sigue en +.
+  Privacidad incorpora micrófono/accesibilidad/grabación/contenido de pantalla y
+  sus acciones existentes. Ayuda añade inicio/replay, comentarios y salir.
+- Sin cambios de defaults, modelos o consentimiento. No se reinstaura selector
+  de herramienta visual. Todos los pictogramas nuevos son SF Symbols; misma
+  superficie degradada, sin panel opaco adicional.
+- Home admite key por interacción explícita con ajustes; orderFrontRegardless
+  conserva apertura pasiva sin makeKey. Auto-hide se retiene durante edición
+  activa o configuración pendiente; cerrar limpia foco. PTT deja de emitir el
+  cierre del menú retirado para no suprimir la isla automática. Introducción sí
+  cierra Home por la notificación existente.
+- CCE Mobile + Write Swift + Apple Design guiaron reutilización del estado,
+  permisos explícitos y separación de hover/foco, sin tocar animación aceptada.
+- Validación final: 184 pruebas/22 suites pasan en
+  `/private/tmp/cursy-native-regression.sN2SNT`; Xcode UI Build Succeeded11:16
+  tras ajuste final del buffer. Build inicial11:12 tenía27 warnings existentes.
+  `git diff --check` limpio; no construcción de CompanionPanelView en fuentes.
+  No Run, reset TCC, Worker, commit ni push. Edición/hover/permisos en equipo real
+  quedan como QA manual; las pruebas de política no acreditan el foco físico.
+- Archivos: MenuBarPanelManager, HomePanelController, HomePresentation,
+  HomeHoverPolicy, HomeView, HomeSettingsView, CompanionManager (solo cierre PTT),
+  HomeHoverPolicyTests, RenderHomePrototype (firma), SETTINGS_QA y AGENTS.
+- Siguiente alcance: completar compositor de texto, selección/prueba local de
+  micrófono y ajustes restantes; tsk008 añade persistencia opt-in; tsk009/010
+  agregan guías y verificación real. tsk005 mantiene contrato de regiones pendiente.
 
 ## Ejecución F1 — 2026-09-19
 

@@ -31,8 +31,9 @@ struct VisualAnnotationPreview {
                         .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.2)))
                         .position(x: 190, y: 78)
                     if let annotation = VisualAnnotation(style: style, point: CGPoint(x: 190, y: 112),
-                        displayFrame: CGRect(x: 0, y: 0, width: 380, height: 190), label: "Guardar cambios") {
-                        VisualAnnotationView(annotation: annotation)
+                        displayFrame: CGRect(x: 0, y: 0, width: 380, height: 190), label: "Guardar cambios",
+                        region: CGRect(x: 152, y: 96, width: 76, height: 32)) {
+                        VisualAnnotationView(annotation: annotation, elapsed: 4, pointer: CGPoint(x: 170, y: 85))
                     }
                 }
                 .frame(width: 380, height: 190).clipShape(RoundedRectangle(cornerRadius: 12))

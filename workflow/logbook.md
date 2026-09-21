@@ -1,10 +1,64 @@
 # Project logbook
 
-**Last updated:** 2026-09-20
+**Last updated:** 2026-09-21
 **Project status:** bootstrap complete; internal macOS prototype
-**Current focus:** combined physical QA for tsk017 latency and tsk007 native design port; tsk006 evaluation and tsk005 acceptance remain pending
+**Current focus:** authorized native Home text/mic/shortcut/selected-text port (tsk007); physical QA, indicator regions and guide prerequisites stay open
 
 ## Snapshot
+
+- 2026-09-21: usuario autoriza commit/push a dev. Memoria consolidada en
+  [decisiones y aprendizajes](product-and-platform-lessons.md): diseño aprobado,
+  selección aislada, detección AX por capacidades, audio y límites de validación.
+  Incluye Home/indicadores/prototipo y correcciones nativas acumuladas. Imagen de
+  concepto de branding excluida por ser ajena a este conjunto; gates siguen abiertos.
+
+- 2026-09-21 tsk007: usuario acepta colocación GPT; Claude/Outlook revelan límites
+  de sondeo/acción única. Nuevo SelectionMenuSearch compartido con tests barre la
+  franja y recupera el contenedor completo, sin reglas por app.232/27 pasan en
+  ejecución final. Xcode remoto no respondió; Build/Run y QA física pendientes.
+
+- 2026-09-21 QA visual tsk007: usuario confirma oferta y reporta mala colocación.
+  Se contrasta anclaje AX con arrastre actual y amplía detección de menú; barra/
+  input se alinean encima del menú con12pt, fallback debajo.225/26 pasan offline.
+  Automatización Xcode agotó tiempo al verificar último build; Run/QA de ubicación
+  pendientes. Sin cambios de diseño, audio, permisos ni contexto seleccionado.
+
+- 2026-09-21 corrección autorizada tsk007: preparación AX por capacidad con
+  warmup2.3s sin reiniciar debounce, lectura ligada a ventana, búsqueda paginada
+  priorizando áreas web y ráfagas de foco a menú sin cancelar el gesto.11 nuevas
+  regresiones;219/26 pasan, Xcode Build/Run. Mantiene barra compacta y contexto
+  solo seleccionado. QA física en Comet/Claude/GPT pendiente; automatización
+  confirma selección AX, no presencia de barra. Detalles y límites en tsk007.
+
+- 2026-09-21 investigación tsk007: barra compacta aceptada; selección aún falla
+  según usuario en Comet/GPT/Claude con menús. Comet expone selección a CUA nativo;
+  logs Cursy muestran fallos pre-presentación y límite48. Detectado desajuste
+  espera120ms vs debounce2s upstream Electron; foco/búsqueda/geometry siguen frágiles.
+  Diagnóstico y propuesta en tsk007, sin modificación de runtime, build o pruebas
+  nuevas. No causa única confirmada en las tres apps ni bloqueo demostrado.
+
+- 2026-09-21 seguimiento tsk007: usuario confirma selección en otra app, aún
+  ausente en GPT. Oferta compacta160×32 sin logo en app/prototipo. Se añade
+  activación AXManualAccessibility por capacidad (documentada por Electron) y
+  conservación breve del anclaje mouse-up ante notificaciones AX tardías.
+  208 pruebas/25 suites nativas y28 Node pasan; Xcode Build succeeded15:09.
+  Causa concreta/aceptación en GPT sigue pendiente; no bloqueo demostrado,
+  clipboard/OCR ni promesa de compatibilidad universal.
+
+- 2026-09-21 QA tsk007: usuario reporta selección ausente en ChatGPT y luego hang
+  al probar entrada integrada. Se corrigen rutas de micrófono predeterminado y
+  prueba aislada del hilo UI; selección AX amplía rangos web/ancestros y eventos
+  nativos. Sin app-specific rules/clipboard/OCR. Verificación física sigue abierta;
+  203 tests/25 suites pasan (capturador simulado). No cierre del ticket ni
+  afirmación de compatibilidad universal o prueba de audio real.
+
+- 2026-09-21: neutral UI borders in prototype/native captions; cursor/icons and
+  actual guidance retain tint. Native text streaming/drafts, mic UID/local test,
+  shortcut recorder, selected-text AX offer→input→isolated chat/voice integrated.
+  Actual playback completion starts capture after greeting. No clipboard/OCR or
+  screen input in selection chats. AX compatibility/audio/focus acceptance remains;
+  tsk007 records limits. Final offline191 tests/24 suites +28 Node passed;
+  Xcode UI Build Succeeded13:15 and Running Cursy13:16, no audio/provider test.
 
 | State | Count |
 |---|---:|
@@ -37,7 +91,7 @@ Paths below are repository-relative.
 |---|---|
 | Native entry/lifecycle | `cursy-app/Cursy/CursyApp.swift`: AppDelegate starts manager, status panel, login item; Sparkle startup currently commented out |
 | Conversation coordinator | `cursy-app/Cursy/CompanionManager.swift`: PTT, voice states, screenshots, fallback, in-memory last 10 exchanges |
-| Native controls/language | `cursy-app/Cursy/MenuBarPanelManager.swift`, `cursy-app/Cursy/CompanionPanelView.swift`, `cursy-app/Cursy/CursyLanguage.swift`; preferences in UserDefaults |
+| Native controls/language | `cursy-app/Cursy/MenuBarPanelManager.swift` routes to official Home; `HomeSettingsView.swift`, `CursyLanguage.swift`; preferences in UserDefaults |
 | Visual output | `cursy-app/Cursy/OverlayWindow.swift`, `cursy-app/Cursy/CursyCursorShape.swift`, `cursy-app/Cursy/CompanionResponseOverlay.swift` |
 | Realtime | `cursy-app/Cursy/OpenAIRealtimeVoiceClient.swift`: protected broker, direct ephemeral-token WebSocket, PCM queue/capture/playback and bounded route recovery |
 | Legacy voice | `cursy-app/Cursy/BuddyDictationManager.swift`, `cursy-app/Cursy/BuddyTranscriptionProvider.swift`, `cursy-app/Cursy/BuddyAudioConversionSupport.swift`; AssemblyAI/OpenAI/Apple Speech providers |
@@ -52,6 +106,100 @@ Paths below are repository-relative.
 | Persistent context | `workflow/` only; specialist instructions in `.agents/skills/` |
 
 ## Active work
+
+- 2026-09-21 tsk007 prototype morph: Ask Cursy button transforms into compact
+  input over250ms; only material scales, text crossfades and focus is immediate.
+  Cancellation cleanup, keyboard bypass and reduced-motion fade retained.
+ 28 Node tests pass; browser verifies intermediate/final state and Escape.
+ Native unchanged.
+
+- 2026-09-21 tsk007 selection refinement: one-line370×46 input,12px corners,
+  compact340px notch notification with clipped symmetric400ms reveal/retract.
+  Synthetic app-menu bounds drive collision-free placement (above preferred,
+  below fallback, suppress when crowded); no native screen/menu detection.
+  26 Node tests pass; browser verifies layout, send and animated exit. Native
+  unchanged; selection snapshot/consent boundaries retained.
+
+- 2026-09-21 tsk007 selected-text prototype: selecting the synthetic document
+  offers Ask Cursy → contextual input/mic. Text opens a fresh selection-only chat;
+  voice previews Cursy-first greeting then listening in the existing notch.
+  Exact snapshots, no prior-chat/screen context, cancellable greeting token.
+  Native unchanged; no AX, real audio or network. 22 Node tests pass; browser
+  verifies both paths and early cancellation. Design/native integration pending.
+
+- 2026-09-21 tsk007 F3 design preview: existing notch web lab now includes text
+  composer, per-chat drafts, send/stop example replies and Voice/Microphone/Shortcuts
+  settings. Device list, level test, permission failures and shortcut capture are
+  explicitly simulated; no audio, network, native preferences or manual objective.
+  Shared gradient/SF Symbols retained. 17 Node tests pass; browser checks cover
+  text, multiline drafts, mic failures and shortcut capture/cancel. Native app
+  untouched; awaiting design feedback before implementation. No task closure.
+
+- 2026-09-21 tsk007 follow-up: user rejects manual conversation-objective setup.
+  Removed field in Home and unreachable legacy view plus editing/focus plumbing;
+  Home is non-key/non-main again. Existing request/history remain the source of
+  conversational intent; no extra model call or automatic authority inference.
+  Setup guard and all other migrated controls retained. Offline184 tests/22 suites
+  pass; Xcode UI Build Succeeded11:21 and diff check clean. No app restart or
+  model evaluation; this is UI simplification, not a new goal-extraction system.
+
+- 2026-09-21 tsk007: user promotes Home to official/default interface. Status
+  icon no longer creates legacy menu; missing objective, permissions, introduction,
+  feedback and quit migrated into General/Privacy/Help. Shared gradient and accepted
+  animations retained, preferences untouched. Editing is explicit; hover stays
+  nonactivating, setup/editing retain Home. PTT no longer dismisses the retired
+  menu, preserving automatic island. Final184 tests/22 suites and Xcode11:16
+  build pass; diff check clean. Physical focus/permission QA
+  remains; no restart, deployment or commit. tsk007 stays open for text/mic/settings.
+
+- 2026-09-21 tsk005 native single-target visual port: shared cursor tint/glass rim,
+  companion-authored1000ms trace, independent typed captions and safe cancellation.
+  Read-only verified AX extents size circles/rectangles; unavailable bounds fall
+  back to cursor. No per-mark settings/clear. Offline181 tests/22 suites pass;
+  native light/dark render reviewed. Xcode UI Build succeeded10:52 with existing
+  warnings; no app restart or live input. User motion/AX quality QA pending. Generic
+  image-region locator and multi-mark/live-guide lifecycle are NOT implemented;
+  tsk005/009/010 remain open. No models, Worker deployment, commit or push changed.
+
+- 2026-09-21 tsk005 prototype revision 4: Cursy approaches/presses/drags to grow
+  rectangles and traces circles/arrows. One synthetic actor,
+  sequential marks, 1600ms drawing. No physical pointer or native change.
+  Eleven motion/geometry tests pass; browser reviewed shapes and stale cancellation.
+  User loves the design; after pacing refinements, applied uniform 1.6×
+  playback, preserving choreography and accessibility. Single-target native port
+  is summarized in the newer entry; generic regions and multiple marks remain pending.
+  Explanations appear directly above target with caption entrance + typing, no
+  connector or artist. Thirteen tests pass; browser verified stable typing layout.
+
+- 2026-09-21 tsk005 prototype revision 3: one-shot smooth contour tracing,
+  pointer-reactive glass rim and brief success/next-step congratulations.
+  User asks for a slower premium feel: trace now 1400ms at even pace, soft opacity
+  entrance and 450ms captions, replacing the fast-start 650ms ease-out.
+  Geometry stays fixed; reduced motion suppresses tracing/reflection. Browser
+  checked final/intermediate outcomes and stale-step blocking; five geometry tests
+  and syntax/diff checks pass. Prototype only; native and live verification pending.
+
+- 2026-09-21 tsk005 prototype revision 2: adaptive region-sized tinted guidance,
+  full-paragraph focus and three-mark drag/drop sample. Shares Cursor palette;
+  no per-mark clear control. Proposed contract in prototypes/notch-voice/guidance-contract.md
+  covers validated bounds/group lifetime; tsk009/010 retain guide/observation work.
+  Synthetic DOM geometry only, no native region or continuous observation port.
+  Browser reviewed; five geometry tests pass. Await design acceptance.
+
+- 2026-09-21 native tsk005/tsk007 follow-up: removed Home and legacy-menu style
+  selectors and the persisted preference reader/writer. Realtime chooses style;
+  nil/automatic/legacy fallback uses Cursor, refresh retains the chosen mark.
+  Clear/cancel and target validation unchanged. Offline 175 tests/22 suites pass;
+  Xcode UI Build succeeded 07:42 (existing warnings). Live style quality remains
+  an explicit QA gate; no new provider, deployment, Run or commit.
+
+- 2026-09-21 user feedback: tsk017 response time has improved (qualitative acceptance,
+  not a measured p50/p95 or device matrix); tsk007 animations now match the desired
+  design. Keep remaining phases open. tsk005 design clarified: the agent chooses
+  visual guidance style, time and validated destination, not a user preference.
+  Existing prototype gains five synthetic examples and removes General's style
+  picker. Native preference/routing migration remains pending; no model calls,
+  native code, build or deployment in this design pass.
 
 - tsk017 in progress: native F1/F2 implemented (early capture, bounded PCM,
   release-before-connect, parallel screenshot/commit, numeric timing). Offline
@@ -301,7 +449,7 @@ Paths below are repository-relative.
 | ID | Status | Type | Path | Goal | Related context |
 |---|---|---|---|---|---|
 | tsk006-spatial-context | in progress | feature | `workflow/02-in-progress/tsk006-spatial-context.md` | Contexto espacial durante la voz | ct012; tsk005 manual QA pending |
-| tsk007-home-notch-settings | in progress | feature | `workflow/02-in-progress/tsk007-home-notch-settings.md` | Native revision3 + limited F2 implemented; combined physical QA with tsk017 pending | ct012, ct017; implemented tsk006 contracts |
+| tsk007-home-notch-settings | in progress | feature | `workflow/02-in-progress/tsk007-home-notch-settings.md` | Official Home + legacy controls migrated; text/mic/settings and physical QA pending | ct012, ct017; implemented tsk006 contracts |
 | tsk008-persistent-conversations | planned | feature | `workflow/01-planned/tsk008-persistent-conversations.md` | Conversaciones persistentes y memoria controlada | ct012; tsk007 |
 | tsk009-persistent-walkthroughs | planned | feature | `workflow/01-planned/tsk009-persistent-walkthroughs.md` | Guías paso a paso persistentes | ct012; tsk006, tsk008 |
 | tsk010-step-verification | planned | feature | `workflow/01-planned/tsk010-step-verification.md` | Verificación visual y avance supervisado | ct012; tsk009 |

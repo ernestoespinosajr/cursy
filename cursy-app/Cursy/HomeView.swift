@@ -14,7 +14,6 @@ struct HomeView: View {
     @ObservedObject var companionManager: CompanionManager
     @ObservedObject var model: HomePresentationModel
     let onPresent: (HomePresentation) -> Void
-    let onSettings: () -> Void
 
     var body: some View {
         HomeContentView(presentation: model.presentation,
@@ -23,7 +22,7 @@ struct HomeView: View {
                 permissionsReady: companionManager.allPermissionsGranted),
             exchanges: HomeExchange.visible(in: companionManager.conversationSession),
             isSpanish: companionManager.preferredLanguage == .spanish,
-            screenSharingEnabled: companionManager.isVisualContextEnabled,
+            screenSharingEnabled: companionManager.isVisualContextEnabled && companionManager.conversationSession.selectedText == nil,
             notice: companionManager.conversationNotice ?? companionManager.visualContextNotice,
             audioPowerLevel: companionManager.currentAudioPowerLevel,
             notchWidth: model.notchWidth,
@@ -34,7 +33,10 @@ struct HomeView: View {
             onNewChat: companionManager.startNewConversation,
             onSelectChat: companionManager.selectConversation,
             settingsContent: { AnyView(HomeSettingsView(companionManager: companionManager, section: $0)) },
-            onPresent: onPresent, onSettings: onSettings)
+            composerContent: AnyView(HomeComposer(manager: companionManager)),
+            selectionText: companionManager.conversationSession.selectedText?.text,
+            needsSetup: !companionManager.allPermissionsGranted || !companionManager.hasCompletedOnboarding,
+            onPresent: onPresent)
             .modifier(HomeReveal(progress: model.reveal, sourceWidth: model.notchWidth,
                                  sourceHeight: model.notchHeight))
     }
@@ -57,8 +59,10 @@ struct HomeContentView: View {
     var onNewChat: () -> Void = {}
     var onSelectChat: (UUID) -> Void = { _ in }
     var settingsContent: (HomeSidebarSection) -> AnyView = { _ in AnyView(EmptyView()) }
+    var composerContent: AnyView = AnyView(EmptyView())
+    var selectionText: String? = nil
+    var needsSetup = false
     let onPresent: (HomePresentation) -> Void
-    let onSettings: () -> Void
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State var sidebarSection: HomeSidebarSection = .chats
     @State private var sidebarVisible = true
@@ -75,6 +79,12 @@ struct HomeContentView: View {
         .foregroundStyle(.white)
         .environment(\.colorScheme, .dark)
         .environment(\.locale, Locale(identifier: isSpanish ? "es" : "en"))
+        .onAppear {
+            if needsSetup { sidebarSection = .privacy }
+        }
+        .onChange(of: needsSetup) { _, required in
+            if required { sidebarSection = .privacy; sidebarVisible = true }
+        }
     }
 
     private var compactIsland: some View {
@@ -175,14 +185,7 @@ struct HomeContentView: View {
                 control("chevron.down", localized("Expandir Home", "Expand Home")) { onPresent(.expanded) }
                 control("xmark", localized("Cerrar Home", "Close Home")) { onPresent(.hidden) }
             } else {
-                HStack(spacing: 3) {
-                    Image(systemName: "mic")
-                    Image(systemName: "control")
-                    Image(systemName: "option")
-                }
-                    .font(.caption.weight(.medium))
-                    .help(localized("Mantén Control + Opción para hablar", "Hold Control + Option to talk"))
-                    .accessibilityLabel(localized("Mantén Control y Opción para hablar", "Hold Control and Option to talk"))
+                HomeShortcutHint(spanish: isSpanish)
                 Image(systemName: screenSharingEnabled ? "rectangle.inset.filled" : "rectangle.slash")
                     .foregroundStyle(screenSharingEnabled ? Color.mint : Color.white.opacity(0.8))
                     .help(localized(screenSharingEnabled ? "Pantalla habilitada" : "Pantalla desactivada",
@@ -191,7 +194,7 @@ struct HomeContentView: View {
                                                   screenSharingEnabled ? "Screen sharing enabled" : "Screen sharing off"))
                 control("gearshape", localized("Ajustes", "Settings")) {
                     sidebarVisible = true
-                    sidebarSection = .general
+                    sidebarSection = HomeSidebarSection.settingsLanding(needsSetup: needsSetup)
                 }
                 control(presentation == .detached ? "pin" : "pip.exit",
                         presentation == .detached ? localized("Anclar arriba", "Attach at top")
@@ -242,7 +245,7 @@ struct HomeContentView: View {
                 Text(localized("Solo durante esta sesión", "Only during this session"))
                     .font(.caption2).foregroundStyle(.white.opacity(0.8))
                     .shadow(color: .black.opacity(0.65), radius: 2, y: 1)
-                Button { sidebarSection = .general } label: {
+                Button { sidebarSection = HomeSidebarSection.settingsLanding(needsSetup: needsSetup) } label: {
                     Label(localized("Ajustes", "Settings"), systemImage: "gearshape").frame(maxWidth: .infinity, alignment: .leading).padding(8)
                 }.buttonStyle(HomeControlStyle())
             } else {
@@ -251,6 +254,8 @@ struct HomeContentView: View {
                         .padding(.vertical, 8)
                 }.buttonStyle(HomeControlStyle())
                 Text(localized("Ajustes", "Settings")).font(.headline)
+                ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
                 ForEach(HomeSidebarSection.allCases.filter { $0 != .chats }) { section in
                     Button { sidebarSection = section } label: {
                         Label(section.title(spanish: isSpanish), systemImage: section.symbol)
@@ -260,6 +265,8 @@ struct HomeContentView: View {
                                         in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(HomeControlStyle())
                 }
+                }
+                }
                 Spacer()
             }
         }
@@ -268,15 +275,29 @@ struct HomeContentView: View {
     }
 
     private var conversation: some View {
+        VStack(spacing: 0) {
+            conversationHistory
+            composerContent
+        }
+    }
+
+    private var conversationHistory: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                if let selectionText {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label(localized("Solo texto seleccionado", "Selected text only"), systemImage: "text.quote").font(.caption)
+                        Text(selectionText).font(.callout).lineLimit(3).textSelection(.enabled)
+                    }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+                }
                 if exchanges.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(localized("Tu conversación,\nsin salir de lo que haces.",
                                        "Your conversation,\nright where you work."))
                             .font(.system(size: 26, weight: .semibold, design: .rounded))
-                        Text(localized("Habla con Cursy usando Control + Opción. La conversación aparecerá aquí.",
-                                       "Talk to Cursy using Control + Option. Your conversation will appear here."))
+                        Text(localized("Escribe abajo o usa el micrófono. La conversación aparecerá aquí.",
+                                       "Type below or use the microphone. Your conversation will appear here."))
                             .font(.body).foregroundStyle(.white.opacity(0.85))
                         Label(localized("El cursor sigue guiándote en pantalla.",
                                         "The cursor still guides you on screen."), systemImage: "cursorarrow")

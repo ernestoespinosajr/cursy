@@ -8,7 +8,7 @@ struct HomeChatRecord: Identifiable {
     var updatedAt: Date
 
     func title(spanish: Bool) -> String {
-        let text = session.objective ?? session.requests.first?.transcript
+        let text = session.requests.first?.transcript ?? session.selectedText?.text ?? session.objective
         return text.map { String($0.prefix(54)) } ?? (spanish ? "Nueva conversación" : "New conversation")
     }
 }
