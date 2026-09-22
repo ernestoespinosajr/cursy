@@ -6,6 +6,7 @@ cursy-app/releases/
 cursy-app/worker/node_modules/
 cursy-app/worker/.dev.vars
 cursy-app/worker/.wrangler/
+cursy-app/branding/
 
 # Agent configuration (Claude Code / Codex): local only, never in the repo
 AGENTS.md
@@ -16,3 +17,4 @@ CLAUDE.local.md
 .agents/
 skills-lock.json
 workflow/
+
