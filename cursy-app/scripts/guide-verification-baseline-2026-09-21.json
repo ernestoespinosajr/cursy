@@ -1,0 +1,531 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-21",
+  "requestedModel": "gpt-4.1",
+  "routePurpose": "conversation",
+  "scope": "Synthetic baseline only; no private screen capture or audio. Not signed app or end-to-end guide acceptance.",
+  "authorization": {
+    "maximumCalls": 80,
+    "completedCalls": 80,
+    "retries": 0,
+    "remainingCalls": 0
+  },
+  "evaluatedClientSHA256": "ef9a9f227fc22e89d4c488c2bd2d80cf21528f83074aa6950156fb42378431bb",
+  "fixtureGeneratorSHA256": "8e4a75f5c11b87fe39aa23d974ae6523e9a13f85752445e591ca3f57c1c072bc",
+  "candidateClientSHA256": "adbeea5856539b5b9d8a3d1676fc03b6e2fdf520a389b0ddd8737e5d731d836c",
+  "candidateStatus": "Prompt hardened after baseline failures; compiled/offline-tested but not live-evaluated.",
+  "thresholds": {
+    "maxFalseAdvances": 0,
+    "minPositiveConfirmations": 18
+  },
+  "summary": {
+    "negativeTrials": 60,
+    "falseAdvances": 7,
+    "positiveTrials": 20,
+    "positiveConfirmations": 20,
+    "qualityGatePassed": false,
+    "failedCases": [
+      "family-1-case-4",
+      "family-1-case-5",
+      "family-1-case-14",
+      "family-3-case-3",
+      "family-3-case-4",
+      "family-3-case-5",
+      "family-3-case-14"
+    ],
+    "uniqueImagePairs": 72,
+    "uniquePositiveImagePairs": 12,
+    "p50Seconds": 1.152569055557251,
+    "p95Seconds": 1.6624300479888916,
+    "maxSeconds": 12.888352990150452
+  },
+  "limitations": [
+    "Simple synthetic screens, not real apps.",
+    "Some positive image pairs repeat; trials are not independent.",
+    "Latency measures verification request/response, not user action through stable observation to guide advance.",
+    "Exact token usage, billed cost and resolved model snapshot were not exposed by the service.",
+    "Baseline results do not validate the revised prompt."
+  ],
+  "results": [
+    {
+      "seconds": 12.888352990150452,
+      "outcome": "pending",
+      "id": "family-0-case-0",
+      "positive": false
+    },
+    {
+      "seconds": 8.73393201828003,
+      "outcome": "pending",
+      "id": "family-0-case-1",
+      "positive": false
+    },
+    {
+      "seconds": 1.6740000247955322,
+      "outcome": "pending",
+      "id": "family-0-case-2",
+      "positive": false
+    },
+    {
+      "seconds": 1.632964015007019,
+      "outcome": "pending",
+      "id": "family-0-case-3",
+      "positive": false
+    },
+    {
+      "seconds": 1.5747801065444946,
+      "outcome": "pending",
+      "id": "family-0-case-4",
+      "positive": false
+    },
+    {
+      "seconds": 1.1576429605484009,
+      "outcome": "pending",
+      "id": "family-0-case-5",
+      "positive": false
+    },
+    {
+      "seconds": 1.2128390073776245,
+      "outcome": "pending",
+      "id": "family-0-case-6",
+      "positive": false
+    },
+    {
+      "seconds": 1.6468350887298584,
+      "outcome": "pending",
+      "id": "family-0-case-7",
+      "positive": false
+    },
+    {
+      "seconds": 1.1891670227050781,
+      "outcome": "pending",
+      "id": "family-0-case-8",
+      "positive": false
+    },
+    {
+      "seconds": 1.0041298866271973,
+      "outcome": "pending",
+      "id": "family-0-case-9",
+      "positive": false
+    },
+    {
+      "seconds": 1.2872940301895142,
+      "outcome": "pending",
+      "id": "family-0-case-10",
+      "positive": false
+    },
+    {
+      "seconds": 1.0543949604034424,
+      "outcome": "pending",
+      "id": "family-0-case-11",
+      "positive": false
+    },
+    {
+      "seconds": 1.1544369459152222,
+      "outcome": "uncertain",
+      "id": "family-0-case-12",
+      "positive": false
+    },
+    {
+      "seconds": 1.0050899982452393,
+      "outcome": "pending",
+      "id": "family-0-case-13",
+      "positive": false
+    },
+    {
+      "seconds": 1.3013349771499634,
+      "outcome": "pending",
+      "id": "family-0-case-14",
+      "positive": false
+    },
+    {
+      "seconds": 1.0049779415130615,
+      "outcome": "confirmed",
+      "id": "family-0-case-15",
+      "positive": true
+    },
+    {
+      "seconds": 1.0216989517211914,
+      "outcome": "confirmed",
+      "id": "family-0-case-16",
+      "positive": true
+    },
+    {
+      "seconds": 0.9527280330657959,
+      "outcome": "confirmed",
+      "id": "family-0-case-17",
+      "positive": true
+    },
+    {
+      "seconds": 1.131432056427002,
+      "outcome": "confirmed",
+      "id": "family-0-case-18",
+      "positive": true
+    },
+    {
+      "seconds": 0.9770359992980957,
+      "outcome": "confirmed",
+      "id": "family-0-case-19",
+      "positive": true
+    },
+    {
+      "seconds": 1.2301490306854248,
+      "outcome": "pending",
+      "id": "family-1-case-0",
+      "positive": false
+    },
+    {
+      "seconds": 1.188704013824463,
+      "outcome": "pending",
+      "id": "family-1-case-1",
+      "positive": false
+    },
+    {
+      "seconds": 1.378561019897461,
+      "outcome": "pending",
+      "id": "family-1-case-2",
+      "positive": false
+    },
+    {
+      "seconds": 1.2172069549560547,
+      "outcome": "pending",
+      "id": "family-1-case-3",
+      "positive": false
+    },
+    {
+      "seconds": 1.4459539651870728,
+      "outcome": "confirmed",
+      "id": "family-1-case-4",
+      "positive": false
+    },
+    {
+      "seconds": 1.4805760383605957,
+      "outcome": "confirmed",
+      "id": "family-1-case-5",
+      "positive": false
+    },
+    {
+      "seconds": 1.5314300060272217,
+      "outcome": "blocked",
+      "id": "family-1-case-6",
+      "positive": false
+    },
+    {
+      "seconds": 1.1544550657272339,
+      "outcome": "blocked",
+      "id": "family-1-case-7",
+      "positive": false
+    },
+    {
+      "seconds": 1.2237799167633057,
+      "outcome": "pending",
+      "id": "family-1-case-8",
+      "positive": false
+    },
+    {
+      "seconds": 1.750182032585144,
+      "outcome": "pending",
+      "id": "family-1-case-9",
+      "positive": false
+    },
+    {
+      "seconds": 1.152569055557251,
+      "outcome": "pending",
+      "id": "family-1-case-10",
+      "positive": false
+    },
+    {
+      "seconds": 1.0522319078445435,
+      "outcome": "pending",
+      "id": "family-1-case-11",
+      "positive": false
+    },
+    {
+      "seconds": 1.461219072341919,
+      "outcome": "uncertain",
+      "id": "family-1-case-12",
+      "positive": false
+    },
+    {
+      "seconds": 0.9661259651184082,
+      "outcome": "pending",
+      "id": "family-1-case-13",
+      "positive": false
+    },
+    {
+      "seconds": 1.6624300479888916,
+      "outcome": "confirmed",
+      "id": "family-1-case-14",
+      "positive": false
+    },
+    {
+      "seconds": 1.0003769397735596,
+      "outcome": "confirmed",
+      "id": "family-1-case-15",
+      "positive": true
+    },
+    {
+      "seconds": 1.055387020111084,
+      "outcome": "confirmed",
+      "id": "family-1-case-16",
+      "positive": true
+    },
+    {
+      "seconds": 0.8323619365692139,
+      "outcome": "confirmed",
+      "id": "family-1-case-17",
+      "positive": true
+    },
+    {
+      "seconds": 1.4643019437789917,
+      "outcome": "confirmed",
+      "id": "family-1-case-18",
+      "positive": true
+    },
+    {
+      "seconds": 1.2089899778366089,
+      "outcome": "confirmed",
+      "id": "family-1-case-19",
+      "positive": true
+    },
+    {
+      "seconds": 1.3138489723205566,
+      "outcome": "pending",
+      "id": "family-2-case-0",
+      "positive": false
+    },
+    {
+      "seconds": 1.1231920719146729,
+      "outcome": "pending",
+      "id": "family-2-case-1",
+      "positive": false
+    },
+    {
+      "seconds": 1.0405930280685425,
+      "outcome": "pending",
+      "id": "family-2-case-2",
+      "positive": false
+    },
+    {
+      "seconds": 1.207798957824707,
+      "outcome": "pending",
+      "id": "family-2-case-3",
+      "positive": false
+    },
+    {
+      "seconds": 1.1218359470367432,
+      "outcome": "pending",
+      "id": "family-2-case-4",
+      "positive": false
+    },
+    {
+      "seconds": 1.1817330121994019,
+      "outcome": "pending",
+      "id": "family-2-case-5",
+      "positive": false
+    },
+    {
+      "seconds": 1.0239709615707397,
+      "outcome": "pending",
+      "id": "family-2-case-6",
+      "positive": false
+    },
+    {
+      "seconds": 1.0267590284347534,
+      "outcome": "pending",
+      "id": "family-2-case-7",
+      "positive": false
+    },
+    {
+      "seconds": 1.5276930332183838,
+      "outcome": "pending",
+      "id": "family-2-case-8",
+      "positive": false
+    },
+    {
+      "seconds": 1.1404110193252563,
+      "outcome": "pending",
+      "id": "family-2-case-9",
+      "positive": false
+    },
+    {
+      "seconds": 1.0026719570159912,
+      "outcome": "pending",
+      "id": "family-2-case-10",
+      "positive": false
+    },
+    {
+      "seconds": 1.111070990562439,
+      "outcome": "pending",
+      "id": "family-2-case-11",
+      "positive": false
+    },
+    {
+      "seconds": 1.0794639587402344,
+      "outcome": "uncertain",
+      "id": "family-2-case-12",
+      "positive": false
+    },
+    {
+      "seconds": 1.0602349042892456,
+      "outcome": "pending",
+      "id": "family-2-case-13",
+      "positive": false
+    },
+    {
+      "seconds": 1.0415409803390503,
+      "outcome": "pending",
+      "id": "family-2-case-14",
+      "positive": false
+    },
+    {
+      "seconds": 0.9967299699783325,
+      "outcome": "confirmed",
+      "id": "family-2-case-15",
+      "positive": true
+    },
+    {
+      "seconds": 1.119296908378601,
+      "outcome": "confirmed",
+      "id": "family-2-case-16",
+      "positive": true
+    },
+    {
+      "seconds": 0.9619719982147217,
+      "outcome": "confirmed",
+      "id": "family-2-case-17",
+      "positive": true
+    },
+    {
+      "seconds": 1.0088928937911987,
+      "outcome": "confirmed",
+      "id": "family-2-case-18",
+      "positive": true
+    },
+    {
+      "seconds": 0.9030529260635376,
+      "outcome": "confirmed",
+      "id": "family-2-case-19",
+      "positive": true
+    },
+    {
+      "seconds": 1.0994349718093872,
+      "outcome": "pending",
+      "id": "family-3-case-0",
+      "positive": false
+    },
+    {
+      "seconds": 1.428171992301941,
+      "outcome": "uncertain",
+      "id": "family-3-case-1",
+      "positive": false
+    },
+    {
+      "seconds": 1.0830819606781006,
+      "outcome": "pending",
+      "id": "family-3-case-2",
+      "positive": false
+    },
+    {
+      "seconds": 1.1099799871444702,
+      "outcome": "confirmed",
+      "id": "family-3-case-3",
+      "positive": false
+    },
+    {
+      "seconds": 1.3938000202178955,
+      "outcome": "confirmed",
+      "id": "family-3-case-4",
+      "positive": false
+    },
+    {
+      "seconds": 1.0473369359970093,
+      "outcome": "confirmed",
+      "id": "family-3-case-5",
+      "positive": false
+    },
+    {
+      "seconds": 1.1333799362182617,
+      "outcome": "pending",
+      "id": "family-3-case-6",
+      "positive": false
+    },
+    {
+      "seconds": 1.2480640411376953,
+      "outcome": "pending",
+      "id": "family-3-case-7",
+      "positive": false
+    },
+    {
+      "seconds": 1.2919390201568604,
+      "outcome": "pending",
+      "id": "family-3-case-8",
+      "positive": false
+    },
+    {
+      "seconds": 1.3997749090194702,
+      "outcome": "pending",
+      "id": "family-3-case-9",
+      "positive": false
+    },
+    {
+      "seconds": 1.1553269624710083,
+      "outcome": "pending",
+      "id": "family-3-case-10",
+      "positive": false
+    },
+    {
+      "seconds": 1.1091859340667725,
+      "outcome": "pending",
+      "id": "family-3-case-11",
+      "positive": false
+    },
+    {
+      "seconds": 1.3021039962768555,
+      "outcome": "uncertain",
+      "id": "family-3-case-12",
+      "positive": false
+    },
+    {
+      "seconds": 1.4297130107879639,
+      "outcome": "pending",
+      "id": "family-3-case-13",
+      "positive": false
+    },
+    {
+      "seconds": 1.4842849969863892,
+      "outcome": "confirmed",
+      "id": "family-3-case-14",
+      "positive": false
+    },
+    {
+      "seconds": 1.2255460023880005,
+      "outcome": "confirmed",
+      "id": "family-3-case-15",
+      "positive": true
+    },
+    {
+      "seconds": 1.0416280031204224,
+      "outcome": "confirmed",
+      "id": "family-3-case-16",
+      "positive": true
+    },
+    {
+      "seconds": 1.0185400247573853,
+      "outcome": "confirmed",
+      "id": "family-3-case-17",
+      "positive": true
+    },
+    {
+      "seconds": 1.1141400337219238,
+      "outcome": "confirmed",
+      "id": "family-3-case-18",
+      "positive": true
+    },
+    {
+      "seconds": 1.1215959787368774,
+      "outcome": "confirmed",
+      "id": "family-3-case-19",
+      "positive": true
+    }
+  ]
+}

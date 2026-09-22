@@ -52,6 +52,52 @@ final class CompanionManager: ObservableObject {
     /// Presentation ownership across displays; never moves the physical pointer.
     @Published var annotationArtistID: UUID?
     private var observationAnnotationStyle: VisualAnnotationStyle?
+    private let walkthroughEnvironment = WalkthroughEnvironment()
+    private var walkthroughObservation: AnyCancellable?
+    @Published private(set) var isGuideActive = false
+    @Published private(set) var isGuideFollowing = false
+    @Published private(set) var guideAnnotations: [VisualAnnotation] = []
+    private var guideAnnotationQueue: [VisualAnnotation] = []
+    lazy var walkthrough: WalkthroughCoordinator = {
+        let coordinator = WalkthroughCoordinator(dependencies: .init(
+            plan: { [weak self] request in
+                guard let self else { throw CancellationError() }
+                return try await WalkthroughModelClient(conversation: self.visionAPI).plan(
+                    request: request, language: self.preferredLanguage)
+            }, capture: {
+                try await VisualCaptureRequest().run(capture: {
+                    try await CompanionScreenCaptureUtility.captureCursorScreen(logCapture: false)
+                })
+            }, locate: { [weak self] step, context, permission in
+                guard let self else { throw CancellationError() }
+                return try await self.locateGuideIndications(step, context: context, permission: permission)
+            }, verify: { [weak self] step, before, current in
+                guard let self else { throw CancellationError() }
+                return try await WalkthroughModelClient(conversation: self.visionAPI).verify(
+                    step: step, before: before, current: current, language: self.preferredLanguage)
+            }, allowed: { [weak self] conversationID in
+                guard let self else { return false }
+                return self.chatLibrary.selectedID == conversationID && self.conversationSession.selectedText == nil
+                    && self.isVisualContextEnabled && self.voiceState == .idle && !self.homeMicrophone.ownsInput
+                    && WalkthroughEnvironment.canObserve
+            }, publish: { [weak self] annotations in self?.publishGuideAnnotations(annotations) }),
+            store: WalkthroughStore(directory: WalkthroughStore.applicationDirectory()))
+        walkthroughObservation = coordinator.objectWillChange.sink { [weak self, weak coordinator] _ in
+            Task { @MainActor in
+                guard let self, let coordinator else { return }
+                self.isGuideActive = coordinator.guide?.status == .active
+                self.isGuideFollowing = coordinator.isFollowing
+                if let guide = coordinator.guide, guide.conversationID == self.chatLibrary.selectedID, !guide.isTerminal {
+                    self.conversationSession.setExplicitObjective(guide.goal + "\nCurrent guide step: " + (guide.currentStep?.content.instruction ?? ""))
+                }
+                if self.isGuideActive {
+                    self.walkthroughEnvironment.start(changed: { [weak coordinator] in coordinator?.sceneChanged() },
+                        unavailable: { [weak coordinator] in coordinator?.pause() })
+                } else { self.walkthroughEnvironment.stop() }
+            }
+        }
+        return coordinator
+    }()
 
     // MARK: - Onboarding Video State (shared across all screen overlays)
 
@@ -173,6 +219,7 @@ final class CompanionManager: ObservableObject {
     @Published var isVisualContextEnabled = false {
         didSet {
             if !isVisualContextEnabled {
+                walkthrough.pause()
                 spatialContextRecorder.cancel()
                 if let turnID = conversationSession.activeTurnID { conversationSession.cancelTurn(turnID) }
                 realtimeTurnID = nil
@@ -232,7 +279,26 @@ final class CompanionManager: ObservableObject {
         conversationSession = session
     }
 
+    func reopenGuide(_ checkpoint: WalkthroughSession.Checkpoint) {
+        guard chatLibrary.canCreate else {
+            conversationNotice = preferredLanguage == .spanish ? "Límite de 20 chats temporales." : "Limit of 20 temporary chats."
+            return
+        }
+        let checkpoint = walkthrough.guide.flatMap {
+            $0.id == checkpoint.id && $0.revision >= checkpoint.revision ? $0.checkpoint : nil
+        } ?? checkpoint
+        startNewConversation()
+        // Home's temporary IDs are not durable. Rebind the explicit reopened guide,
+        // never restore coordinates, audio or capture/verification consent.
+        let rebound = WalkthroughSession.Checkpoint(version: checkpoint.version, id: checkpoint.id,
+            conversationID: chatLibrary.selectedID, goal: checkpoint.goal, revision: checkpoint.revision,
+            status: checkpoint.status, steps: checkpoint.steps, verificationUsage: checkpoint.verificationUsage)
+        do { try walkthrough.restore(rebound) }
+        catch { conversationNotice = preferredLanguage == .spanish ? "No se pudo recuperar esta guía." : "Could not restore this guide." }
+    }
+
     private func stopAndResetConversation() {
+        walkthrough.pause()
         homeShortcutRecorder.stop()
         homeMicrophone.stop()
         isSelectionGreeting = false
@@ -556,6 +622,60 @@ final class CompanionManager: ObservableObject {
         visualObservation?.start()
     }
 
+    private func locateGuideIndications(_ step: WalkthroughPlan.Step,
+                                       context: VisualTurnContext,
+                                       permission: () async throws -> (() -> Void)) async throws -> [VisualAnnotation] {
+        var resolved: [(WalkthroughPlan.Indication, PointingTarget, CGPoint)] = []
+        for indication in step.indications where indication.role != .route {
+            try Task.checkCancellation()
+            let release = try await permission()
+            defer { release() }
+            guard let target = try await ElementLocationDetector.detectElementLocation(context: context,
+                question: indication.targetQuery, client: localizationAPI, history: [], objective: nil),
+                  let screen = NSScreen.screens.first(where: {
+                      ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == context.displayID
+                  }), let point = ElementLocationDetector.resolve(target, context: context, currentFrame: screen.frame)
+            else { return [] }
+            resolved.append((indication, target, point))
+        }
+        // Revalidate every member after all asynchronous localization calls. Never
+        // mix an old source with a newly resolved destination.
+        for (_, target, _) in resolved {
+            guard let screen = NSScreen.screens.first(where: { $0.frame == context.displayFrame }),
+                  ElementLocationDetector.resolve(target, context: context, currentFrame: screen.frame) != nil else { return [] }
+        }
+        return WalkthroughAnnotations.make(step: step, resolved: resolved.map { indication, target, point in
+            .init(indication: indication, point: point,
+                  region: ElementLocationDetector.annotationRegion(for: target, point: point, context: context))
+        }, displayFrame: context.displayFrame)
+    }
+
+    private func publishGuideAnnotations(_ annotations: [VisualAnnotation]) {
+        clearDetectedElementLocation()
+        guard !annotations.isEmpty else { return }
+        overlayWindowManager.showOverlay(onScreens: NSScreen.screens, companionManager: self)
+        guideAnnotationQueue = annotations
+        isOverlayVisible = true
+        transientHideTask?.cancel()
+        showNextGuideAnnotation()
+    }
+
+    func isGuideAnnotation(_ id: UUID) -> Bool { guideAnnotationQueue.contains(where: { $0.id == id }) }
+
+    func finishGuideAnnotation(_ id: UUID) {
+        guard guideAnnotationQueue.first?.id == id else { return }
+        let finished = guideAnnotationQueue.removeFirst()
+        if finished.style != .cursor { guideAnnotations.append(finished) }
+        showNextGuideAnnotation()
+    }
+
+    private func showNextGuideAnnotation() {
+        visualAnnotation = guideAnnotationQueue.first
+        detectedElementScreenLocation = visualAnnotation?.point
+        detectedElementDisplayFrame = visualAnnotation?.displayFrame
+        detectedElementBubbleText = visualAnnotation?.label
+    }
+
     private func publishValidatedIndication(point: CGPoint, context: VisualTurnContext,
                                            label: String, style: VisualAnnotationStyle? = nil,
                                            target: PointingTarget? = nil) {
@@ -572,6 +692,8 @@ final class CompanionManager: ObservableObject {
     }
 
     func clearDetectedElementLocation(stopObservation: Bool = true) {
+        guideAnnotations = []
+        guideAnnotationQueue = []
         if stopObservation {
             observationAnnotationStyle = nil
             visualObservation?.stop()
@@ -585,6 +707,8 @@ final class CompanionManager: ObservableObject {
     }
 
     func stop() {
+        walkthrough.pause()
+        walkthroughEnvironment.stop()
         homeShortcutRecorder.stop()
         homeMicrophone.endObservation()
         spatialContextRecorder.cancel()
@@ -784,6 +908,7 @@ final class CompanionManager: ObservableObject {
     private func handleShortcutTransition(_ transition: BuddyPushToTalkShortcut.ShortcutTransition) {
         switch transition {
         case .pressed:
+            walkthrough.pause()
             guard !homeMicrophone.ownsInput else {
                 homeMicrophone.stop()
                 conversationNotice = preferredLanguage == .spanish
@@ -1433,7 +1558,7 @@ final class CompanionManager: ObservableObject {
 
             // Wait for pointing animation to finish (location is cleared
             // when the buddy flies back to the cursor)
-            while detectedElementScreenLocation != nil || visualObservation?.alive == true {
+            while detectedElementScreenLocation != nil || visualObservation?.alive == true || isGuideActive {
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 guard !Task.isCancelled else { return }
             }

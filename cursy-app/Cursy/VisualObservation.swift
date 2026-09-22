@@ -30,6 +30,10 @@ struct VisualSceneFingerprint {
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw URLError(.cannotDecodeContentData)
         }
+        try self.init(image: image)
+    }
+
+    init(image: CGImage) throws {
         var pixels = [UInt8](repeating: 0, count: Self.width * Self.height)
         let rendered = pixels.withUnsafeMutableBytes { bytes -> Bool in
             guard let context = CGContext(data: bytes.baseAddress, width: Self.width,

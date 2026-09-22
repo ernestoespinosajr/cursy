@@ -32,9 +32,10 @@ struct VisualAnnotation: Equatable {
     let displayFrame: CGRect
     let label: String
     let region: CGRect?
+    let routeStart: CGPoint?
 
     init?(style: VisualAnnotationStyle, point: CGPoint, displayFrame: CGRect, label: String,
-          region: CGRect? = nil) {
+          region: CGRect? = nil, routeStart: CGPoint? = nil) {
         let values = [point.x, point.y, displayFrame.minX, displayFrame.minY,
                       displayFrame.width, displayFrame.height]
         guard values.allSatisfy(\.isFinite), displayFrame.width >= 100,
@@ -46,12 +47,17 @@ struct VisualAnnotation: Equatable {
                   region.width > 0, region.height > 0, displayFrame.contains(region),
                   region.contains(point) else { return nil }
         }
+        if let routeStart {
+            guard style == .arrow, routeStart.x.isFinite, routeStart.y.isFinite,
+                  displayFrame.contains(routeStart), routeStart != point else { return nil }
+        }
         // A point does not establish a paragraph's extent. Keep it a precise cue.
         self.style = (style == .rectangle || style == .circle) && region == nil ? .cursor : style
         self.point = point
         self.displayFrame = displayFrame
         self.label = label
         self.region = region
+        self.routeStart = routeStart
     }
 
     var localPoint: CGPoint {
@@ -59,6 +65,9 @@ struct VisualAnnotation: Equatable {
     }
 
     var arrowTail: CGPoint {
+        if let routeStart {
+            return ScreenCoordinateSpace.overlayPoint(globalPoint: routeStart, displayFrame: displayFrame)
+        }
         let point = localPoint
         return CGPoint(x: point.x + (point.x > displayFrame.width / 2 ? -48 : 48),
                        y: point.y + (point.y > displayFrame.height / 2 ? -44 : 44))

@@ -1,0 +1,1046 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-22",
+  "batch": "candidate-v3-structured-evidence",
+  "requestedModel": "gpt-4.1",
+  "routePurpose": "conversation",
+  "scope": "Synthetic production verification pipeline: model plus local evidence veto. No private screen/audio capture or signed-app acceptance.",
+  "authorization": {
+    "maximumCalls": 80,
+    "completedCalls": 80,
+    "retries": 0,
+    "remainingCalls": 0,
+    "totalCompletedAcrossThreeAuthorizations": 240
+  },
+  "evaluatedClientSHA256": "1ceb67eea041d8bdf18e6a5ae04cde5683bf8003ed82465ce1771f7f51168e42",
+  "evaluatedEvidenceValidatorSHA256": "1a82b03c497a137fbd7c9ca006b5436921e1c93bcd21f7c2967ce6f584159e63",
+  "fixtureGeneratorSHA256": "4475715b14cd556460cae68398d1599a7c5fa9bf5876af59ba1275ebbd4300b0",
+  "thresholds": {
+    "maxFalseAdvances": 0,
+    "minPositiveConfirmations": 18
+  },
+  "summary": {
+    "negativeTrials": 60,
+    "falseAdvances": 2,
+    "positiveTrials": 20,
+    "positiveConfirmations": 15,
+    "qualityGatePassed": false,
+    "failedNegativeCases": [
+      "family-3-case-3",
+      "family-3-case-5"
+    ],
+    "missedPositiveCases": [
+      "family-0-case-16",
+      "family-0-case-18",
+      "family-3-case-16",
+      "family-3-case-18",
+      "family-3-case-19"
+    ],
+    "uniqueImagePairs": 80,
+    "uniquePositiveImagePairs": 20,
+    "exactPairsSharedWithV2": 80,
+    "previousV2FailuresNowRejected": [
+      "family-1-case-4",
+      "family-3-case-8"
+    ]
+  },
+  "timing": {
+    "allCalls": {
+      "sampleCount": 80,
+      "p50Seconds": 1.308701992034912,
+      "p95Seconds": 7.6320449113845825,
+      "maxSeconds": 16.34860098361969
+    },
+    "firstCallIncludesUserKeychainApprovalSeconds": 16.34860098361969,
+    "excludingFirstCall": {
+      "sampleCount": 79,
+      "p50Seconds": 1.308701992034912,
+      "p95Seconds": 7.6320449113845825,
+      "maxSeconds": 10.211115002632141
+    },
+    "interpretation": "Elapsed verify() including transport and local validation, not end-to-end guide latency. First sample includes Keychain approval; exact approval duration not measured."
+  },
+  "comparison": {
+    "reference": "guide-verification-candidate-v2-2026-09-21.json",
+    "sameScreenshots": true,
+    "v2FalseAdvances": 2,
+    "v3FalseAdvances": 2,
+    "v2PositiveConfirmations": 20,
+    "v3PositiveConfirmations": 15,
+    "note": "Same fixtures, one stochastic run per candidate. Two prior failures rejected but two previously passing negatives regress. Not evidence of overall improvement or independent generalization."
+  },
+  "limitations": [
+    "No raw model response or evidence rejection reason is retained by this runner; cannot separate model uncertainty from local veto for missed positives.",
+    "Native captured-window metadata is unavailable in these synthetic contexts; OS grounding and live guide flows remain separate gates.",
+    "No resolved model snapshot, token usage or billed cost exposed by the existing route.",
+    "No prompts or runtime code changed during the batch. No retries after the quality-gate failure."
+  ],
+  "artifactsDirectory": "/private/tmp/cursy-guide-v3.gaOiCm",
+  "nativeLibraryDirectory": "/private/tmp/cursy-native-regression.Rkn64T",
+  "exitCode": 1,
+  "exitReason": "Quality threshold failed after 80 completed results; not transport failure or app crash.",
+  "results": [
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-0",
+      "seconds": 16.34860098361969
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-1",
+      "seconds": 9.391738057136536
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-2",
+      "seconds": 7.6320449113845825
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-3",
+      "seconds": 8.674948930740356
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-4",
+      "seconds": 10.211115002632141
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-5",
+      "seconds": 6.881495952606201
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-6",
+      "seconds": 1.281754970550537
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-7",
+      "seconds": 1.586501955986023
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-8",
+      "seconds": 1.5276340246200562
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-9",
+      "seconds": 1.2269550561904907
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-10",
+      "seconds": 1.1254239082336426
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-11",
+      "seconds": 1.239914059638977
+    },
+    {
+      "positive": false,
+      "outcome": "uncertain",
+      "id": "family-0-case-12",
+      "seconds": 1.7101420164108276
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-13",
+      "seconds": 1.074465036392212
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-0-case-14",
+      "seconds": 1.0373769998550415
+    },
+    {
+      "positive": true,
+      "outcome": "confirmed",
+      "id": "family-0-case-15",
+      "seconds": 1.7257930040359497
+    },
+    {
+      "positive": true,
+      "outcome": "uncertain",
+      "id": "family-0-case-16",
+      "seconds": 1.9509069919586182
+    },
+    {
+      "positive": true,
+      "outcome": "confirmed",
+      "id": "family-0-case-17",
+      "seconds": 2.2949159145355225
+    },
+    {
+      "positive": true,
+      "outcome": "uncertain",
+      "id": "family-0-case-18",
+      "seconds": 2.777738928794861
+    },
+    {
+      "positive": true,
+      "outcome": "confirmed",
+      "id": "family-0-case-19",
+      "seconds": 2.109516978263855
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-0",
+      "seconds": 1.1688859462738037
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-1",
+      "seconds": 1.278109073638916
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-2",
+      "seconds": 1.2517839670181274
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-3",
+      "seconds": 1.2081259489059448
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-4",
+      "seconds": 1.2007529735565186
+    },
+    {
+      "positive": false,
+      "outcome": "uncertain",
+      "id": "family-1-case-5",
+      "seconds": 1.1673580408096313
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-6",
+      "seconds": 1.308701992034912
+    },
+    {
+      "positive": false,
+      "outcome": "blocked",
+      "id": "family-1-case-7",
+      "seconds": 1.821363091468811
+    },
+    {
+      "positive": false,
+      "outcome": "uncertain",
+      "id": "family-1-case-8",
+      "seconds": 1.2121039628982544
+    },
+    {
+      "positive": false,
+      "outcome": "pending",
+      "id": "family-1-case-9",
+      "seconds": 1.064939022064209
+    },
+    {
+      "id": "family-1-case-10",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2687309980392456
+    },
+    {
+      "id": "family-1-case-11",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.1003589630126953
+    },
+    {
+      "id": "family-1-case-12",
+      "positive": false,
+      "outcome": "uncertain",
+      "seconds": 1.128579020500183
+    },
+    {
+      "id": "family-1-case-13",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.0635899305343628
+    },
+    {
+      "id": "family-1-case-14",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.3266350030899048
+    },
+    {
+      "id": "family-1-case-15",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.6472859382629395
+    },
+    {
+      "id": "family-1-case-16",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.249979019165039
+    },
+    {
+      "id": "family-1-case-17",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 5.9125999212265015
+    },
+    {
+      "id": "family-1-case-18",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.6483139991760254
+    },
+    {
+      "id": "family-1-case-19",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.410627007484436
+    },
+    {
+      "id": "family-2-case-0",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2826340198516846
+    },
+    {
+      "id": "family-2-case-1",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.211690068244934
+    },
+    {
+      "id": "family-2-case-2",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2689670324325562
+    },
+    {
+      "id": "family-2-case-3",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2062820196151733
+    },
+    {
+      "id": "family-2-case-4",
+      "positive": false,
+      "outcome": "uncertain",
+      "seconds": 1.4453929662704468
+    },
+    {
+      "id": "family-2-case-5",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.1122519969940186
+    },
+    {
+      "id": "family-2-case-6",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.184190034866333
+    },
+    {
+      "id": "family-2-case-7",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.071658968925476
+    },
+    {
+      "id": "family-2-case-8",
+      "positive": false,
+      "outcome": "uncertain",
+      "seconds": 1.4170809984207153
+    },
+    {
+      "id": "family-2-case-9",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2038569450378418
+    },
+    {
+      "id": "family-2-case-10",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.1319319009780884
+    },
+    {
+      "id": "family-2-case-11",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2672239542007446
+    },
+    {
+      "id": "family-2-case-12",
+      "positive": false,
+      "outcome": "uncertain",
+      "seconds": 1.1870779991149902
+    },
+    {
+      "id": "family-2-case-13",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.347316026687622
+    },
+    {
+      "id": "family-2-case-14",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2176669836044312
+    },
+    {
+      "id": "family-2-case-15",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.4668960571289062
+    },
+    {
+      "id": "family-2-case-16",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.4091070890426636
+    },
+    {
+      "id": "family-2-case-17",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 3.0995399951934814
+    },
+    {
+      "id": "family-2-case-18",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.2561190128326416
+    },
+    {
+      "id": "family-2-case-19",
+      "positive": true,
+      "outcome": "confirmed",
+      "seconds": 2.482241988182068
+    },
+    {
+      "id": "family-3-case-0",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.0990519523620605
+    },
+    {
+      "id": "family-3-case-1",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.4373570680618286
+    },
+    {
+      "id": "family-3-case-2",
+      "positive": false,
+      "outcome": "pending",
+      "seconds": 1.2074310779571533
+    },
+    {
+      "id": "family-3-case-3",
+      "positive": false,
+      "outcome": "confirmed",
+      "seconds": 2.5070159435272217
+    },
+    {
+      "id": "family-3-case-4",
+      "positive": false,
+      "outcome": "uncertain",
+      "seconds": 1.5351719856262207
+    },
+    {
+      "id": "family-3-case-5",
+      "positive": false,
+      "outcome": "confirmed",
+      "seconds": 2.6792659759521484
+    },
+    {
+      "outcome": "pending",
+      "positive": false,
+      "seconds": 1.3401330709457397,
+      "id": "family-3-case-6"
+    },
+    {
+      "outcome": "blocked",
+      "positive": false,
+      "seconds": 1.266032099723816,
+      "id": "family-3-case-7"
+    },
+    {
+      "outcome": "uncertain",
+      "positive": false,
+      "seconds": 1.382200002670288,
+      "id": "family-3-case-8"
+    },
+    {
+      "outcome": "pending",
+      "positive": false,
+      "seconds": 1.087149977684021,
+      "id": "family-3-case-9"
+    },
+    {
+      "outcome": "pending",
+      "positive": false,
+      "seconds": 1.2044379711151123,
+      "id": "family-3-case-10"
+    },
+    {
+      "outcome": "pending",
+      "positive": false,
+      "seconds": 1.2478309869766235,
+      "id": "family-3-case-11"
+    },
+    {
+      "outcome": "uncertain",
+      "positive": false,
+      "seconds": 1.2386939525604248,
+      "id": "family-3-case-12"
+    },
+    {
+      "outcome": "pending",
+      "positive": false,
+      "seconds": 1.1572020053863525,
+      "id": "family-3-case-13"
+    },
+    {
+      "outcome": "pending",
+      "positive": false,
+      "seconds": 1.254402995109558,
+      "id": "family-3-case-14"
+    },
+    {
+      "outcome": "confirmed",
+      "positive": true,
+      "seconds": 2.3098479509353638,
+      "id": "family-3-case-15"
+    },
+    {
+      "outcome": "uncertain",
+      "positive": true,
+      "seconds": 2.2803690433502197,
+      "id": "family-3-case-16"
+    },
+    {
+      "outcome": "confirmed",
+      "positive": true,
+      "seconds": 1.9062930345535278,
+      "id": "family-3-case-17"
+    },
+    {
+      "outcome": "uncertain",
+      "positive": true,
+      "seconds": 2.214253067970276,
+      "id": "family-3-case-18"
+    },
+    {
+      "outcome": "uncertain",
+      "positive": true,
+      "seconds": 2.2665220499038696,
+      "id": "family-3-case-19"
+    }
+  ],
+  "fixturePairs": [
+    {
+      "id": "family-0-case-0",
+      "positive": false,
+      "beforeSHA256": "0ac27ed306fa2db432c425f114d93d5c4d70d7481d60a4558c335735fcac4a8c",
+      "afterSHA256": "0ac27ed306fa2db432c425f114d93d5c4d70d7481d60a4558c335735fcac4a8c"
+    },
+    {
+      "id": "family-0-case-1",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "1fe7219b872de6a3bb07d65e02b6a851036e30de5ff56f95f5da48d2df0d94d2"
+    },
+    {
+      "id": "family-0-case-2",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "aefad54de20689b7373d4179f8c2fe6d73d803529811cfa90e31c17afc9f18fa"
+    },
+    {
+      "id": "family-0-case-3",
+      "positive": false,
+      "beforeSHA256": "0ac27ed306fa2db432c425f114d93d5c4d70d7481d60a4558c335735fcac4a8c",
+      "afterSHA256": "47654f632e698908d7e7c20ccc2b47f7922087b534421f46ebd80e9632e0896a"
+    },
+    {
+      "id": "family-0-case-4",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "746ecd9683dfeec7582958fc8d6d434ee3009a16a8eb9678c31531e1b7c9acf7"
+    },
+    {
+      "id": "family-0-case-5",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "ae43e65412353545883f9c1e68994d0a2e1c1308c707829b00377a2030e3a073"
+    },
+    {
+      "id": "family-0-case-6",
+      "positive": false,
+      "beforeSHA256": "0ac27ed306fa2db432c425f114d93d5c4d70d7481d60a4558c335735fcac4a8c",
+      "afterSHA256": "720e7d6ee34303627307cbb1953a1db0a02a7ae62b8c4865f3692eec76a81b36"
+    },
+    {
+      "id": "family-0-case-7",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "c1a8ae1cde26469f33182a2dbc1b03f28c170d57c067ec54dd98e7927d04e364"
+    },
+    {
+      "id": "family-0-case-8",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "87385b912c37b1cf72ce5d2fc6d21f95e8f4954f1e6814bf279a98d3ddbf0e5b"
+    },
+    {
+      "id": "family-0-case-9",
+      "positive": false,
+      "beforeSHA256": "0ac27ed306fa2db432c425f114d93d5c4d70d7481d60a4558c335735fcac4a8c",
+      "afterSHA256": "8188db4460e2dcf554fcf43f95c474469e47ebd4eedc0d158ec021e115d751c0"
+    },
+    {
+      "id": "family-0-case-10",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "554bc6dccfe639773b7b5c7c91dba1fa0a330fe5963d7579114dbad6c2eadd4a"
+    },
+    {
+      "id": "family-0-case-11",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "6e09ea2b45fe18d9fb5158e5e1e003fa3f5e224423beab616223b32404a91160"
+    },
+    {
+      "id": "family-0-case-12",
+      "positive": false,
+      "beforeSHA256": "0ac27ed306fa2db432c425f114d93d5c4d70d7481d60a4558c335735fcac4a8c",
+      "afterSHA256": "6511316e58ca33a3e9158b4893e32f938ca63bec509a657fd70e18518001812d"
+    },
+    {
+      "id": "family-0-case-13",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "42a9eb20d6c80edcf1516b3bcb5d286c735bc53dd70ed22928a9d5d14967e8c4"
+    },
+    {
+      "id": "family-0-case-14",
+      "positive": false,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "abe744b715e5797090fe0eeb4391d4ba349e03d5cae3024408fadd1fbe377a4a"
+    },
+    {
+      "id": "family-0-case-15",
+      "positive": true,
+      "beforeSHA256": "7d709bcb68c93eb4cc62b6e4667b87c390af774514eb9b8a0f2b93f734eeb347",
+      "afterSHA256": "097b77ac452d9da62161814be3faee22a87b0e41f33dd1bcffc4ce98520a72ed"
+    },
+    {
+      "id": "family-0-case-16",
+      "positive": true,
+      "beforeSHA256": "326592694af7c87f8d0403bd212a1ce2b04ac67bf4274d8350727693ffb48b0e",
+      "afterSHA256": "2f5ffee378bc8e68818308fb504bda646552579a8d1328e3584b48a9afafb643"
+    },
+    {
+      "id": "family-0-case-17",
+      "positive": true,
+      "beforeSHA256": "eef9f47784b16b911686a727cba946c153a886449693e869c05e1fc59d85311c",
+      "afterSHA256": "62a304d62afd0676a2099c3f39500cd88be91e4709bf2e116db1a99455c81f3a"
+    },
+    {
+      "id": "family-0-case-18",
+      "positive": true,
+      "beforeSHA256": "4d6c9a2ab85300cd78e575e833bc2eafccd81e8e82430505bcc1607ff0b6f2d3",
+      "afterSHA256": "a8370184f3f8414f08ef76fd2519cb25db2fdee3c87126db41848c9c46793f11"
+    },
+    {
+      "id": "family-0-case-19",
+      "positive": true,
+      "beforeSHA256": "5cda1be59e7b22b5a45b643459d0d7108af51327481210fda7fd014fc292160a",
+      "afterSHA256": "4b9f0a91b35b108fd6c7619f1327186ef1571dd4f9dc2a4b6052bfff34a1aa27"
+    },
+    {
+      "id": "family-1-case-0",
+      "positive": false,
+      "beforeSHA256": "439622a97c37094a4a315a239e46d8497e803b6a4be170a829c1014a5f223607",
+      "afterSHA256": "439622a97c37094a4a315a239e46d8497e803b6a4be170a829c1014a5f223607"
+    },
+    {
+      "id": "family-1-case-1",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "e110ff66e9b729a2846bff4af754fa851c93651f88e11a8edd3537c54c24da64"
+    },
+    {
+      "id": "family-1-case-2",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "e0164be1e2d4a08ce7904594190b0db614bc0e665188d933010563c8af31fcc8"
+    },
+    {
+      "id": "family-1-case-3",
+      "positive": false,
+      "beforeSHA256": "439622a97c37094a4a315a239e46d8497e803b6a4be170a829c1014a5f223607",
+      "afterSHA256": "fcd0d2543a1c4362891f47562ab5079cf520221380647151dc389c40fac1b4eb"
+    },
+    {
+      "id": "family-1-case-4",
+      "positive": false,
+      "beforeSHA256": "5c65eb1685947834cdd275296fdfe17f00bec5605cc47ca7124ec16d33beb611",
+      "afterSHA256": "8b032f00f52abbe01f116a37c804e1dbd4ffd612c01892783f5148dde7fa441f"
+    },
+    {
+      "id": "family-1-case-5",
+      "positive": false,
+      "beforeSHA256": "5579768df7f560abe6f3d34c22e8f779d3f15d5e13340a80bf4d1eaa71fcd61a",
+      "afterSHA256": "a12fd425bb87567eeaa73fcac9b661b111e5a69d6b2ecb4829fcf6c07b1c57a6"
+    },
+    {
+      "id": "family-1-case-6",
+      "positive": false,
+      "beforeSHA256": "439622a97c37094a4a315a239e46d8497e803b6a4be170a829c1014a5f223607",
+      "afterSHA256": "46afc871e0af048b1136b876155ec1cec05f9c63e5929435623c604a249f8869"
+    },
+    {
+      "id": "family-1-case-7",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "bfff49ea0a93a59d704e61db6d29cf9fdc5eb6c8cbcbb2c99020b39fbbdf50c9"
+    },
+    {
+      "id": "family-1-case-8",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "2df1dee58388b0f74bcf294aebfbb628749697ce35d303e19c6a46f05a16b1e3"
+    },
+    {
+      "id": "family-1-case-9",
+      "positive": false,
+      "beforeSHA256": "439622a97c37094a4a315a239e46d8497e803b6a4be170a829c1014a5f223607",
+      "afterSHA256": "fe562f38bf1ace8d422d7618f6875f04aedf061c2e56a87d6cded37356f1e070"
+    },
+    {
+      "id": "family-1-case-10",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "4640ad66b6a7e653e416efa1706bc01345c1f3907f72adbf5ee8961edbddd59c"
+    },
+    {
+      "id": "family-1-case-11",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "a7f4826145ba075a0158f4bd5064cbf1c5645df38b9323c28ce6351312d29358"
+    },
+    {
+      "id": "family-1-case-12",
+      "positive": false,
+      "beforeSHA256": "439622a97c37094a4a315a239e46d8497e803b6a4be170a829c1014a5f223607",
+      "afterSHA256": "230819e0cd04972ee05d7dc252595a4697f8598e567656e65954276eed83b1b8"
+    },
+    {
+      "id": "family-1-case-13",
+      "positive": false,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "3babe2403fdbc95a7968aa3e61d8836ff6fbf2a0f1ad001cb61998fefdcc1e9b"
+    },
+    {
+      "id": "family-1-case-14",
+      "positive": false,
+      "beforeSHA256": "5c65eb1685947834cdd275296fdfe17f00bec5605cc47ca7124ec16d33beb611",
+      "afterSHA256": "a19a46e044839aedc866c272e73d3c167dc68d02b92a9a41dc64e1b65e2526fa"
+    },
+    {
+      "id": "family-1-case-15",
+      "positive": true,
+      "beforeSHA256": "1cef606e4120531768bbac435cbc8630cc95567c43b8187efa8ef4a7ad01e702",
+      "afterSHA256": "e6a54775df4c7b2ecd3fac7f8666e19b42b8a09a04458c3c19040f33445932b9"
+    },
+    {
+      "id": "family-1-case-16",
+      "positive": true,
+      "beforeSHA256": "8c1740a947a5dc56fd006d2d6d41578078f4e92de635c3372bf42bde7fcc599e",
+      "afterSHA256": "6b8b916762cf404c5f962715140316b70a34c536f0787e8e50055592727f799c"
+    },
+    {
+      "id": "family-1-case-17",
+      "positive": true,
+      "beforeSHA256": "e2ee405fba15d87ce8bce9f90b24b7897bd1959328df0ff77342cbe769779ca0",
+      "afterSHA256": "6233cb2fd644bc4454146bb4aafc1f790621c36d179816b094c6504fb8040cd8"
+    },
+    {
+      "id": "family-1-case-18",
+      "positive": true,
+      "beforeSHA256": "00820b2fc62ff7f1c173ac91c51c51e7bf6850b66b9032f1b0185118e0bba99d",
+      "afterSHA256": "b6cc8f52d7b5a6db336a5184fe8e6d2ce4276623dde2dcf05420f3b94effc4ac"
+    },
+    {
+      "id": "family-1-case-19",
+      "positive": true,
+      "beforeSHA256": "524b42e798871fa36cf2894fe3fdb50c10a7cc010767075c8d3b0b7bc32259a1",
+      "afterSHA256": "78280f14ca1e50d0d6fb0808fda720f2963baea51a1006c8674ed55df6b4b870"
+    },
+    {
+      "id": "family-2-case-0",
+      "positive": false,
+      "beforeSHA256": "eec98281beb2cdfa209589f183b282ff6283c8d8afc428b42157bed3796b53cd",
+      "afterSHA256": "eec98281beb2cdfa209589f183b282ff6283c8d8afc428b42157bed3796b53cd"
+    },
+    {
+      "id": "family-2-case-1",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "dd22cbf04c6fad1c02905daf06d840afa0fc39039fe32b6633af66688a390d94"
+    },
+    {
+      "id": "family-2-case-2",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "d79620a4606e2a414dea5fd535352794989a4e0bef787a2cc8ff47de3abed38b"
+    },
+    {
+      "id": "family-2-case-3",
+      "positive": false,
+      "beforeSHA256": "eec98281beb2cdfa209589f183b282ff6283c8d8afc428b42157bed3796b53cd",
+      "afterSHA256": "d26d1aaeba365d5ba9e9c07c085e16a2555f691a1a7beea81c17a0866cf7c657"
+    },
+    {
+      "id": "family-2-case-4",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "b52ad8d2dc469aa96f492a3c710fd7226c4f0226a9a755f90d8746fbbb92354c"
+    },
+    {
+      "id": "family-2-case-5",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "fe1bc27e516788b17533e0f1099c7cea537e8400bc91b1d70736500a980c04d3"
+    },
+    {
+      "id": "family-2-case-6",
+      "positive": false,
+      "beforeSHA256": "eec98281beb2cdfa209589f183b282ff6283c8d8afc428b42157bed3796b53cd",
+      "afterSHA256": "0abdf3d6b843aaeafe0eb08ca2f6cd9b739c98f5264a0e93a3f582dfbdd0d930"
+    },
+    {
+      "id": "family-2-case-7",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "cef88b36458387142d3308b17870624e4df2fd2425174c8993c7687f34fe8604"
+    },
+    {
+      "id": "family-2-case-8",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "a2c5201eef6ffd6da39348ff487c1d3d101cebf3a9f51955e992e591507f36d0"
+    },
+    {
+      "id": "family-2-case-9",
+      "positive": false,
+      "beforeSHA256": "eec98281beb2cdfa209589f183b282ff6283c8d8afc428b42157bed3796b53cd",
+      "afterSHA256": "2abbca7eeab6c4b23a200590ecaa09af817c533727172ca3a5ce7e40cc9a8061"
+    },
+    {
+      "id": "family-2-case-10",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "066209ae20855c56f1aff73c19e963454787894739b0229b62fcf67abd50b7b9"
+    },
+    {
+      "id": "family-2-case-11",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "826f5ddf1eef71bcf2083ca8cd6390fd40b3dc2f11a5d54c94964f0f3b3ff668"
+    },
+    {
+      "id": "family-2-case-12",
+      "positive": false,
+      "beforeSHA256": "eec98281beb2cdfa209589f183b282ff6283c8d8afc428b42157bed3796b53cd",
+      "afterSHA256": "c2993d38ca84dd72ee45559e006b23858fc051660d5bc24d1e3ef1bb0ec8415e"
+    },
+    {
+      "id": "family-2-case-13",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "5686442048fe23aa891de0f1d0756e973c4ca1dbfd76a4c349a1a65653ceed16"
+    },
+    {
+      "id": "family-2-case-14",
+      "positive": false,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "426d31dae9ea6c9e412b90afbef6cbc28c49a70b33df1636351e495b42e3c256"
+    },
+    {
+      "id": "family-2-case-15",
+      "positive": true,
+      "beforeSHA256": "353e8052ce9e67ebaf17dbcf52a5a3bba60a1ee6b4f39b2c91f38e44b56bf35c",
+      "afterSHA256": "4409c9848c38d66c051d132d2c17b7b201353509653a7f121d20520c9e73bd15"
+    },
+    {
+      "id": "family-2-case-16",
+      "positive": true,
+      "beforeSHA256": "b3a76a7904c93635b5a121e73467198b1b505f0b1184194663ac0c0d35b9eaf5",
+      "afterSHA256": "e47e0999874928b151a8ace3e31d54755aaf2f130c9b8e22753a60d6d49f0cb5"
+    },
+    {
+      "id": "family-2-case-17",
+      "positive": true,
+      "beforeSHA256": "4567107374d4f46dd93de7a3351fce7ce0376a7748d6c05ddece41c1335a64df",
+      "afterSHA256": "68b4c42586ba3a8e15ae600e9c917e7a262de08b5d00daf250bb1759a0310e37"
+    },
+    {
+      "id": "family-2-case-18",
+      "positive": true,
+      "beforeSHA256": "c593cb9f4d8bcd4e35c57ba0294d16b552a24a1f0d74533cfdce1f9e30956d88",
+      "afterSHA256": "066f6d6467796b5081dcdb75f661697360ced7145379e0b782ff804363a276eb"
+    },
+    {
+      "id": "family-2-case-19",
+      "positive": true,
+      "beforeSHA256": "76261410d2443598f0bfccc93c7499ef857c9c5d93cf22b792461a178b03b22e",
+      "afterSHA256": "0cfb2e8632905c83acb2729e1569af7b1ed5b1296262924fe3dcfdf7102a5bc4"
+    },
+    {
+      "id": "family-3-case-0",
+      "positive": false,
+      "beforeSHA256": "82b399de582b3d84dc5a4cf9c84f700c15d0d72ed099336fae449e83a5980d2d",
+      "afterSHA256": "82b399de582b3d84dc5a4cf9c84f700c15d0d72ed099336fae449e83a5980d2d"
+    },
+    {
+      "id": "family-3-case-1",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "05d503c189cd0b6a6a05fdf45f37ecac989ca1e7dc89acb95c0b7130bd60c354"
+    },
+    {
+      "id": "family-3-case-2",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "c7df3f714381be34a52cb446c74a24644d11d2177d60ea783c990d096d0bfc11"
+    },
+    {
+      "id": "family-3-case-3",
+      "positive": false,
+      "beforeSHA256": "7ea13a7e28d30f49774fd21b6e9c44a62249f2dcc26bde51f143c98295d4d967",
+      "afterSHA256": "30a9e7efba1d36f46a26e78a0097ac1613b7860f6785f914fc7899eff3fca210"
+    },
+    {
+      "id": "family-3-case-4",
+      "positive": false,
+      "beforeSHA256": "f40fda768783c2013fd42bd995eccb834b8a4706cdbae91dd93f10457023fc6b",
+      "afterSHA256": "554d4f7574479873a5d501911b3ff7ed770e54360fffe7982dc8ecd61969ae2c"
+    },
+    {
+      "id": "family-3-case-5",
+      "positive": false,
+      "beforeSHA256": "7ea13a7e28d30f49774fd21b6e9c44a62249f2dcc26bde51f143c98295d4d967",
+      "afterSHA256": "8f4c7d08d6f347f281004b3bc0451dba2d8ce8dba2297692a00f8b8b9a13985a"
+    },
+    {
+      "id": "family-3-case-6",
+      "positive": false,
+      "beforeSHA256": "82b399de582b3d84dc5a4cf9c84f700c15d0d72ed099336fae449e83a5980d2d",
+      "afterSHA256": "6821f9bb1d8e39780ff8e63d178fb68f4628281f3658159170fbc17b7d8f2dfc"
+    },
+    {
+      "id": "family-3-case-7",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "cd509dead4bded303d2ae4fc401f3a385177b620a4ba269d1d8c40eca13903dc"
+    },
+    {
+      "id": "family-3-case-8",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "3bd6cb99450946040c900e56f76cf2ebf8cff5ddfe313c30dcd4ab1744b54dd8"
+    },
+    {
+      "id": "family-3-case-9",
+      "positive": false,
+      "beforeSHA256": "82b399de582b3d84dc5a4cf9c84f700c15d0d72ed099336fae449e83a5980d2d",
+      "afterSHA256": "0e061d21594de86c601fc66d5bcca6f7a05daa03668bb313c3890e41d1d45b65"
+    },
+    {
+      "id": "family-3-case-10",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "cfa3a39e53bf3741d0ad7d24d25f60470d4949fed54fa36d8249b8dcf27d2be0"
+    },
+    {
+      "id": "family-3-case-11",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "75244021b962893c50925e5415bdcaa1a15df95d1ff4ca7a807c2c24da55cfcf"
+    },
+    {
+      "id": "family-3-case-12",
+      "positive": false,
+      "beforeSHA256": "82b399de582b3d84dc5a4cf9c84f700c15d0d72ed099336fae449e83a5980d2d",
+      "afterSHA256": "3d7055ead2242cf00460be2480efa65198ef0144dbe7786dcb66fa0a63dfdd65"
+    },
+    {
+      "id": "family-3-case-13",
+      "positive": false,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "c046a1d701d5c5bb97b0921ba02fd734047e585bafce9365cf7fa96af07b3aa3"
+    },
+    {
+      "id": "family-3-case-14",
+      "positive": false,
+      "beforeSHA256": "f40fda768783c2013fd42bd995eccb834b8a4706cdbae91dd93f10457023fc6b",
+      "afterSHA256": "62453f713dae48c2fbc81cb148e9fd9180f5b06d1cd3aa926cad9d472f32a4e7"
+    },
+    {
+      "id": "family-3-case-15",
+      "positive": true,
+      "beforeSHA256": "f8043553a999c26dec4795c4087aad0e1e69af4c075a230fbe4a15f92d6bd946",
+      "afterSHA256": "b955980f67efc6a96e85b80ebb03480e5609e9a2ff02a73f599d896abf7638f6"
+    },
+    {
+      "id": "family-3-case-16",
+      "positive": true,
+      "beforeSHA256": "f247a902e85da4729d93264f1bcad182066ea53ad0c3561f38554361aa5668c3",
+      "afterSHA256": "9141791f4cc4966cda032184014182d74ce1bc8f6aed26ecd9ad6c8abb1014fc"
+    },
+    {
+      "id": "family-3-case-17",
+      "positive": true,
+      "beforeSHA256": "551dd79e85fd8a4dfe55784397e3058119d3048b66c08cd01527fa274a0c019e",
+      "afterSHA256": "d2414106721212d58c699eced244d74569184f6764c69f7bb974e766336672ef"
+    },
+    {
+      "id": "family-3-case-18",
+      "positive": true,
+      "beforeSHA256": "1c92607cb337cf222f86a3bb8c6e985e4283937827474691fa86e7ca9c7a3b02",
+      "afterSHA256": "108747839e5996137ea11aa1bcd08e583cb7479eb09c9b93ca681c920ee893c4"
+    },
+    {
+      "id": "family-3-case-19",
+      "positive": true,
+      "beforeSHA256": "974fba7095854ce3faa2e64234f539deecb20e2c5e154247d07876bb1e6993e7",
+      "afterSHA256": "db1b7c60bf3d914931411de2afe3df055e5a1a7e070ed2dc421a43e9a17d1dca"
+    }
+  ]
+}

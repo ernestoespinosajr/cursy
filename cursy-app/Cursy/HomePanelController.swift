@@ -164,7 +164,7 @@ final class HomePanelController {
         }
         if !inTrigger && !inPanel { suppressHoverUntilExit = false }
         let intent = HomeHoverPolicy.intent(presentation: requestedPresentation,
-            inTrigger: inTrigger, inPanel: inPanel, busy: companionManager.voiceState != .idle || panel?.isKeyWindow == true,
+            inTrigger: inTrigger, inPanel: inPanel, busy: companionManager.voiceState != .idle || companionManager.isGuideActive || panel?.isKeyWindow == true,
             dragging: NSEvent.pressedMouseButtons != 0, suppressed: suppressHoverUntilExit,
             voiceOver: NSWorkspace.shared.isVoiceOverEnabled, closing: autoClosing,
             setupRequired: !companionManager.allPermissionsGranted || !companionManager.hasCompletedOnboarding)
@@ -263,6 +263,9 @@ final class HomePanelController {
     }
 
     private func present(_ presentation: HomePresentation, animated: Bool = true, afterCollapse: Bool = false) {
+        if presentation == .hidden, companionManager.walkthrough.isFollowing {
+            companionManager.walkthrough.pause()
+        }
         let wasVisible = panel?.isVisible == true
         let previous = model.presentation
         // Preserve the screen reached by dragging before changing presentation.

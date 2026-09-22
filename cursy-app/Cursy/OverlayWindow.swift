@@ -301,6 +301,10 @@ struct BlueCursorView: View {
                     }
             }
 
+            ForEach(companionManager.guideAnnotations.filter { $0.displayFrame == screenFrame }, id: \.id) { annotation in
+                VisualAnnotationView(annotation: annotation, elapsed: 60, pointer: annotationPointer)
+            }
+
             if let annotation = companionManager.visualAnnotation,
                annotation.style != .cursor, annotation.displayFrame == screenFrame {
                 VisualAnnotationView(annotation: annotation,
@@ -460,7 +464,8 @@ struct BlueCursorView: View {
             self.isCursorOnThisScreen = self.screenFrame.contains(mouseLocation)
             // This timer is installed on the main run loop by the view.
             MainActor.assumeIsolated {
-                if self.companionManager.visualAnnotation?.displayFrame == self.screenFrame {
+                if self.companionManager.visualAnnotation?.displayFrame == self.screenFrame
+                    || self.companionManager.guideAnnotations.contains(where: { $0.displayFrame == self.screenFrame }) {
                     self.annotationPointer = self.convertScreenPointToSwiftUICoordinates(mouseLocation)
                 }
             }
@@ -638,6 +643,10 @@ struct BlueCursorView: View {
         guard let annotation = companionManager.visualAnnotation, annotation.displayFrame == screenFrame else { return }
         if annotation.style == .cursor {
             if !shouldDockAtNotch { startNavigatingToElement(screenLocation: annotation.point) }
+            if companionManager.isGuideAnnotation(annotation.id) {
+                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                companionManager.finishGuideAnnotation(annotation.id)
+            }
             return
         }
         let identity = annotation.id
@@ -710,6 +719,10 @@ struct BlueCursorView: View {
             }
             buddyNavigationMode = .followingCursor
             companionManager.annotationArtistID = nil
+            if companionManager.isGuideAnnotation(identity) {
+                companionManager.finishGuideAnnotation(identity)
+                return
+            }
             // Same short-lived indication semantics as the original pointer bubble.
             // Retirement is not evidence that the user completed an action.
             try await Task.sleep(for: .seconds(4))
@@ -910,7 +923,7 @@ struct BlueCursorView: View {
         navigationBubbleText = ""
         navigationBubbleOpacity = 0.0
         navigationBubbleScale = 1.0
-        companionManager.clearDetectedElementLocation()
+        if !companionManager.isGuideActive { companionManager.clearDetectedElementLocation() }
     }
 
     // MARK: - Welcome Animation

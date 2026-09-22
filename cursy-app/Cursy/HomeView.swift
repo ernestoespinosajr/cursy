@@ -34,6 +34,8 @@ struct HomeView: View {
             onSelectChat: companionManager.selectConversation,
             settingsContent: { AnyView(HomeSettingsView(companionManager: companionManager, section: $0)) },
             composerContent: AnyView(HomeComposer(manager: companionManager)),
+            guideContent: AnyView(WalkthroughPanel(manager: companionManager, coordinator: companionManager.walkthrough)),
+            isGuideFollowing: companionManager.isGuideFollowing,
             selectionText: companionManager.conversationSession.selectedText?.text,
             needsSetup: !companionManager.allPermissionsGranted || !companionManager.hasCompletedOnboarding,
             onPresent: onPresent)
@@ -60,6 +62,8 @@ struct HomeContentView: View {
     var onSelectChat: (UUID) -> Void = { _ in }
     var settingsContent: (HomeSidebarSection) -> AnyView = { _ in AnyView(EmptyView()) }
     var composerContent: AnyView = AnyView(EmptyView())
+    var guideContent: AnyView = AnyView(EmptyView())
+    var isGuideFollowing = false
     var selectionText: String? = nil
     var needsSetup = false
     let onPresent: (HomePresentation) -> Void
@@ -68,6 +72,9 @@ struct HomeContentView: View {
     @State private var sidebarVisible = true
 
     private var isCompact: Bool { presentation == .compact }
+    private var statusTitle: String {
+        isGuideFollowing ? localized("Siguiendo guía", "Following guide") : activity.title(isSpanish: isSpanish)
+    }
     private var voiceFeedback: HomeVoiceFeedback {
         HomeVoiceFeedback(activity: activity, audioPowerLevel: audioPowerLevel)
     }
@@ -92,7 +99,7 @@ struct HomeContentView: View {
             Button { onPresent(.expanded) } label: {
                 VStack(spacing: 2) {
                     Text("Cursy").font(.system(size: 12, weight: .semibold))
-                    Text(activity.title(isSpanish: isSpanish))
+                    Text(statusTitle)
                         .font(.system(size: 10)).foregroundStyle(.white.opacity(0.85))
                         .lineLimit(1).minimumScaleFactor(0.85)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -170,11 +177,11 @@ struct HomeContentView: View {
                     }
                 }
                 HStack(spacing: 9) {
-                    Text(activity.title(isSpanish: isSpanish))
+                    Text(statusTitle)
                         .font(isCompact ? .subheadline.weight(.medium) : .caption)
                         .foregroundStyle(.white.opacity(isCompact ? 1 : 0.85))
                         .lineLimit(1)
-                        .accessibilityLabel(activity.title(isSpanish: isSpanish))
+                        .accessibilityLabel(statusTitle)
                     if voiceFeedback.isListening {
                         HomeVoiceWaveform(feedback: voiceFeedback)
                     }
@@ -277,6 +284,7 @@ struct HomeContentView: View {
     private var conversation: some View {
         VStack(spacing: 0) {
             conversationHistory
+            guideContent
             composerContent
         }
     }
